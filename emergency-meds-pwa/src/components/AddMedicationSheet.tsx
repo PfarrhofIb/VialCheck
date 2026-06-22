@@ -7,6 +7,7 @@ import MonthPicker from './MonthPicker'
 import MedicationNameFields from './MedicationNameFields'
 import { runOcr } from '../utils/ocr'
 import { hasAnyName, type DisplayNameField } from '../utils/medicationDisplay'
+import type { MedicationSuggestion } from '../utils/medicationSuggestions'
 import { normalizeQuantityInput, parseQuantityInput, QUICK_QUANTITY_OPTIONS } from '../utils/quantityInput'
 
 interface AddMedicationSheetProps {
@@ -27,6 +28,7 @@ export default function AddMedicationSheet({
   onAdded,
 }: AddMedicationSheetProps) {
   const refresh = useStore((s) => s.refresh)
+  const medications = useStore((s) => s.medications)
   const [handelsname, setHandelsname] = useState('')
   const [wirkstoffname, setWirkstoffname] = useState('')
   const [displayName, setDisplayName] = useState<DisplayNameField>('handelsname')
@@ -73,6 +75,11 @@ export default function AddMedicationSheet({
   }
 
   const canSave = hasAnyName(handelsname, wirkstoffname) && !!expiry
+
+  function applySuggestion(s: MedicationSuggestion) {
+    if (s.ml_per_ampule != null) setMlPerAmpule(String(s.ml_per_ampule))
+    if (s.mg_per_ml != null) setMgPerMl(String(s.mg_per_ml))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -196,6 +203,8 @@ export default function AddMedicationSheet({
           onHandelsnameChange={setHandelsname}
           onWirkstoffnameChange={setWirkstoffname}
           onDisplayNameChange={setDisplayName}
+          localMedications={medications}
+          onSuggestionSelect={applySuggestion}
         />
 
         <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat" required />

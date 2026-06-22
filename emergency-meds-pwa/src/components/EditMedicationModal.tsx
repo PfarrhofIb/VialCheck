@@ -6,6 +6,7 @@ import Modal from './Modal'
 import MedicationNameFields from './MedicationNameFields'
 import { runOcr } from '../utils/ocr'
 import { getPrimaryName, hasAnyName, type DisplayNameField } from '../utils/medicationDisplay'
+import type { MedicationSuggestion } from '../utils/medicationSuggestions'
 
 interface EditMedicationModalProps {
   med: MedicationWithBatches | null
@@ -14,6 +15,7 @@ interface EditMedicationModalProps {
 
 export default function EditMedicationModal({ med, onClose }: EditMedicationModalProps) {
   const refresh = useStore((s) => s.refresh)
+  const medications = useStore((s) => s.medications)
   const [handelsname, setHandelsname] = useState('')
   const [wirkstoffname, setWirkstoffname] = useState('')
   const [displayName, setDisplayName] = useState<DisplayNameField>('handelsname')
@@ -43,6 +45,11 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
   if (!med) return null
 
   const canSave = hasAnyName(handelsname, wirkstoffname)
+
+  function applySuggestion(s: MedicationSuggestion) {
+    if (s.ml_per_ampule != null) setMlPerAmpule(String(s.ml_per_ampule))
+    if (s.mg_per_ml != null) setMgPerMl(String(s.mg_per_ml))
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -104,6 +111,8 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
           onHandelsnameChange={setHandelsname}
           onWirkstoffnameChange={setWirkstoffname}
           onDisplayNameChange={setDisplayName}
+          localMedications={medications}
+          onSuggestionSelect={applySuggestion}
         />
 
         <div className="grid grid-cols-2 gap-3">

@@ -1,0 +1,30 @@
+import type { MedicationSuggestion } from '../utils/medicationSuggestions'
+
+/** Standard-Notfallkatalog (aus VialCheck-Backup, ohne Fotos/Chargen). */
+export const MEDICATION_CATALOG: MedicationSuggestion[] = [
+  { handelsname: 'Dibondrin', wirkstoffname: '', display_name: 'handelsname', source: 'catalog' },
+  { handelsname: 'Buscopina', wirkstoffname: '', display_name: 'handelsname', ml_per_ampule: 1, mg_per_ml: 20, source: 'catalog' },
+  { handelsname: 'Novalgin 1g', wirkstoffname: 'Metamizol', display_name: 'handelsname', ml_per_ampule: 2, mg_per_ml: 500, source: 'catalog' },
+  { handelsname: 'Diclobene', wirkstoffname: 'Diclofenac', display_name: 'wirkstoffname', ml_per_ampule: 2, mg_per_ml: 37.5, source: 'catalog' },
+  { handelsname: 'Narcanti', wirkstoffname: 'Naloxon', display_name: 'wirkstoffname', ml_per_ampule: 1, mg_per_ml: 0.4, source: 'catalog' },
+  { handelsname: 'Kytril', wirkstoffname: 'Granisetron', display_name: 'handelsname', ml_per_ampule: 3, mg_per_ml: 1, source: 'catalog' },
+  { handelsname: 'Esmeron', wirkstoffname: 'Roruronium', display_name: 'wirkstoffname', ml_per_ampule: 5, mg_per_ml: 10, source: 'catalog' },
+  { handelsname: 'Novalgin 2,5g', wirkstoffname: 'Metamizol', display_name: 'handelsname', ml_per_ampule: 5, mg_per_ml: 500, source: 'catalog' },
+  { handelsname: 'Dormicum 1mg/ml', wirkstoffname: 'Midazolam', display_name: 'handelsname', ml_per_ampule: 5, mg_per_ml: 1, source: 'catalog' },
+  { handelsname: 'Anexate', wirkstoffname: 'Flumazenil', display_name: 'handelsname', ml_per_ampule: 5, mg_per_ml: 0.1, source: 'catalog' },
+  { handelsname: 'Cyclokapron', wirkstoffname: 'Tranexamsäure', display_name: 'wirkstoffname', ml_per_ampule: 5, mg_per_ml: 100, source: 'catalog' },
+  { handelsname: 'Lasix', wirkstoffname: 'Furosemid', display_name: 'wirkstoffname', ml_per_ampule: 4, mg_per_ml: 10, source: 'catalog' },
+  { handelsname: '', wirkstoffname: 'Propofol', display_name: 'wirkstoffname', ml_per_ampule: 20, mg_per_ml: 10, source: 'catalog' },
+  { handelsname: 'L-Adrenalin', wirkstoffname: 'Epinephrin', display_name: 'handelsname', ml_per_ampule: 20, mg_per_ml: 0.1, source: 'catalog' },
+  { handelsname: 'Atropinum', wirkstoffname: 'Atropin', display_name: 'wirkstoffname', ml_per_ampule: 1, mg_per_ml: 0.5, source: 'catalog' },
+  { handelsname: '', wirkstoffname: 'Ephedrin', display_name: 'wirkstoffname', ml_per_ampule: 5, mg_per_ml: 10, source: 'catalog' },
+  { handelsname: '', wirkstoffname: 'Amiodaron', display_name: 'wirkstoffname', ml_per_ampule: 3, mg_per_ml: 50, source: 'catalog' },
+  { handelsname: 'Ketanest S 5mg/ml', wirkstoffname: 'Esketamin', display_name: 'wirkstoffname', ml_per_ampule: 5, mg_per_ml: 5, source: 'catalog' },
+  { handelsname: '', wirkstoffname: 'Fentanyl', display_name: 'handelsname', ml_per_ampule: 10, mg_per_ml: 50, source: 'catalog' },
+  { handelsname: 'Ebrantil', wirkstoffname: 'Urapidil', display_name: 'wirkstoffname', ml_per_ampule: 10, mg_per_ml: 5, source: 'catalog' },
+  { handelsname: '', wirkstoffname: 'Heparin', display_name: 'wirkstoffname', ml_per_ampule: 10, mg_per_ml: 1000, source: 'catalog' },
+  { handelsname: 'Stesolid', wirkstoffname: 'Diazepam', display_name: 'handelsname', ml_per_ampule: 2.5, mg_per_ml: 4, source: 'catalog' },
+  { handelsname: '', wirkstoffname: 'Pantoprazol', display_name: 'wirkstoffname', mg_per_ml: 40, source: 'catalog' },
+  { handelsname: 'Prednisolut', wirkstoffname: 'Prednisolon', display_name: 'handelsname', mg_per_ml: 250, source: 'catalog' },
+  { handelsname: 'Aspirin', wirkstoffname: 'ASS', display_name: 'handelsname', mg_per_ml: 500, source: 'catalog' },
+]
