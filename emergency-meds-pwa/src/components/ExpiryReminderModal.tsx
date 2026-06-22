@@ -79,14 +79,14 @@ export default function ExpiryReminderModal({
         <Link
           to="/nachfullen"
           onClick={onClose}
-          className="block text-center text-sm font-medium text-red-600 mb-4"
+          className="block text-center text-sm font-medium text-brand-navy mb-4"
         >
           Zum Tab „Nachfüllen“ →
         </Link>
       )}
 
       {canNotify && permission === 'default' && notifState !== 'granted' && (
-        <div className="rounded-xl bg-red-50 px-3 py-3 mb-4">
+        <div className="rounded-xl bg-brand-navy-50 px-3 py-3 mb-4">
           <p className="text-xs text-gray-700 mb-2">
             Mit Benachrichtigungen siehst du diese Übersicht auch als System-Hinweis — wenn du die
             App am Monatsende öffnest (ohne Server, kein Hintergrund-Push).
@@ -95,7 +95,7 @@ export default function ExpiryReminderModal({
             type="button"
             onClick={handleEnableNotifications}
             disabled={notifState === 'requesting'}
-            className="w-full py-2 rounded-xl bg-red-600 text-white text-sm font-medium disabled:opacity-60"
+            className="w-full py-2 rounded-xl bg-brand-navy text-white text-sm font-medium disabled:opacity-60"
           >
             {notifState === 'requesting' ? 'Wird angefragt…' : 'Benachrichtigungen erlauben'}
           </button>

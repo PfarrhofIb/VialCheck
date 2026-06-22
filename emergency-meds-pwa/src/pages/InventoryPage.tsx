@@ -58,7 +58,7 @@ export default function InventoryPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Medikament suchen…"
-          className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
         />
       </div>
 
@@ -91,7 +91,7 @@ export default function InventoryPage() {
       {/* FAB */}
       <button
         onClick={() => setShowAdd(true)}
-        className="fixed right-4 bottom-20 w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-40"
+        className="fixed right-4 bottom-20 w-14 h-14 bg-brand-navy hover:bg-brand-navy-dark text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-40"
         aria-label="Medikament hinzufügen"
         style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >

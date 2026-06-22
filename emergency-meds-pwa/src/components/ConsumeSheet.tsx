@@ -56,7 +56,7 @@ export default function ConsumeSheet({ med, onClose }: ConsumeSheetProps) {
             className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${isExpired(batch.expiry_date) ? 'bg-red-500' : 'bg-green-500'}`} />
+              <div className={`w-3 h-3 rounded-full ${isExpired(batch.expiry_date) ? 'bg-red-500' : 'bg-brand-green'}`} />
               <span className={`font-mono font-medium ${expiryColorClass(batch.expiry_date)}`}>
                 {formatYearMonth(batch.expiry_date)}
               </span>

@@ -45,14 +45,14 @@ export default function RefillPage() {
                 onClick={() => setActiveTab(tab)}
                 className={`flex-1 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize ${
                   activeTab === tab
-                    ? 'border-red-600 text-red-600'
+                    ? 'border-brand-navy text-brand-navy'
                     : 'border-transparent text-gray-500 hover:text-gray-800'
                 }`}
               >
                 {tab === 'verbraucht' ? 'Verbraucht' : 'Ablauf'}
                 {count > 0 && (
                   <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                    activeTab === tab ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                    activeTab === tab ? 'bg-brand-navy-50 text-brand-navy' : 'bg-gray-100 text-gray-600'
                   }`}>
                     {count}
                   </span>
@@ -167,7 +167,7 @@ function RefillActionButtons({
         <button
           type="button"
           onClick={onUnorder}
-          className="text-xs text-blue-700 font-medium px-2 py-1 rounded-lg hover:bg-blue-100"
+          className="text-xs text-brand-navy font-medium px-2 py-1 rounded-lg hover:bg-brand-navy-50"
         >
           Bestellt zurücknehmen
         </button>
@@ -175,7 +175,7 @@ function RefillActionButtons({
         <button
           type="button"
           onClick={onOrder}
-          className="border border-blue-600 text-blue-700 hover:bg-blue-50 text-sm font-medium px-3 py-2 rounded-xl transition-colors"
+          className="border border-brand-navy text-brand-navy hover:bg-brand-navy-50 text-sm font-medium px-3 py-2 rounded-xl transition-colors"
         >
           Bestellt
         </button>
@@ -183,7 +183,7 @@ function RefillActionButtons({
       <button
         type="button"
         onClick={onDone}
-        className="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-3 py-2 rounded-xl transition-colors"
+        className="bg-brand-navy hover:bg-brand-navy-dark text-white text-sm font-medium px-3 py-2 rounded-xl transition-colors"
       >
         {doneLabel}
       </button>
@@ -207,13 +207,13 @@ function VerbrauchtCard({
   return (
     <div
       className={`rounded-2xl border shadow-sm p-4 ${
-        ordered ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100'
+        ordered ? 'bg-brand-navy-50 border-brand-navy/20' : 'bg-white border-gray-100'
       }`}
     >
       <div className="flex items-center justify-between gap-2">
         <div>
           {ordered && (
-            <span className="inline-block text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full mb-1">
+            <span className="inline-block text-xs font-semibold text-brand-navy bg-brand-navy-50 px-2 py-0.5 rounded-full mb-1">
               Bestellt
             </span>
           )}
@@ -223,7 +223,7 @@ function VerbrauchtCard({
           )}
           <p className="text-sm text-gray-500 mt-0.5">Benötigt: {item.amount_needed}×</p>
           {ordered && (
-            <p className="text-xs text-blue-700 mt-1">Bereit zum Ein sortieren</p>
+            <p className="text-xs text-brand-navy mt-1">Bereit zum Ein sortieren</p>
           )}
         </div>
         <RefillActionButtons
@@ -287,7 +287,7 @@ function VerbrauchtSection({
       )}
       {ordered.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-blue-700 mb-3">Bestellt</h2>
+          <h2 className="text-sm font-semibold text-brand-navy mb-3">Bestellt</h2>
           <p className="text-xs text-gray-500 mb-3">Lieferung da — zum Ein sortieren mit „Aufgefüllt“ bestätigen</p>
           <div className="space-y-3">
             {ordered.map((item) => (
@@ -340,7 +340,7 @@ function ExpiryCard({
   const isExpired = variant === 'expired'
 
   const baseStyle = ordered
-    ? 'bg-blue-50 border-blue-200'
+    ? 'bg-brand-navy-50 border-brand-navy/20'
     : isExpired
       ? 'bg-red-50 border-red-200'
       : 'bg-yellow-50 border-yellow-200'
@@ -350,17 +350,17 @@ function ExpiryCard({
       <div className="flex items-start justify-between gap-2">
         <div>
           {ordered && (
-            <span className="inline-block text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full mb-1">
+            <span className="inline-block text-xs font-semibold text-brand-navy bg-brand-navy-50 px-2 py-0.5 rounded-full mb-1">
               Bestellt
             </span>
           )}
           <MedicationNameDisplay
             med={medication}
             primaryClassName={`font-semibold ${
-              ordered ? 'text-blue-900' : isExpired ? 'text-red-900' : 'text-yellow-900'
+              ordered ? 'text-brand-navy' : isExpired ? 'text-red-900' : 'text-yellow-900'
             }`}
             secondaryClassName={`text-xs truncate mt-0.5 ${
-              ordered ? 'text-blue-800/80' : isExpired ? 'text-red-700/80' : 'text-yellow-800/80'
+              ordered ? 'text-brand-navy/80' : isExpired ? 'text-red-700/80' : 'text-yellow-800/80'
             }`}
           />
           <div className="mt-1 space-y-0.5">
@@ -371,7 +371,7 @@ function ExpiryCard({
             ))}
           </div>
           {ordered && (
-            <p className="text-xs text-blue-700 mt-1">Bereit zum Ein sortieren</p>
+            <p className="text-xs text-brand-navy mt-1">Bereit zum Ein sortieren</p>
           )}
         </div>
         <RefillActionButtons
@@ -426,7 +426,7 @@ function ExpiryGroupList({
       )}
       {ordered.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold text-blue-700 mb-2 uppercase tracking-wide">Bestellt</h3>
+          <h3 className="text-xs font-semibold text-brand-navy mb-2 uppercase tracking-wide">Bestellt</h3>
           <p className="text-xs text-gray-500 mb-2">Lieferung da — mit „Ersetzt“ ein sortieren</p>
           <div className="space-y-3">
             {ordered.map((group) => (
@@ -549,7 +549,7 @@ function RefillDialog({
             type="checkbox"
             checked={addToStock}
             onChange={(e) => setAddToStock(e.target.checked)}
-            className="w-5 h-5 rounded accent-red-600"
+            className="w-5 h-5 rounded accent-brand-navy"
           />
           <span className="text-sm font-medium">Bestand im Inventar erhöhen</span>
         </label>
@@ -563,7 +563,7 @@ function RefillDialog({
                 value={qtyInput}
                 onChange={(e) => setQtyInput(e.target.value)}
                 onBlur={() => setQtyInput((v) => normalizeQuantityInput(v))}
-                className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
               />
             </div>
             <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat neuer Charge" required />
@@ -576,7 +576,7 @@ function RefillDialog({
           <button
             onClick={handleConfirm}
             disabled={loading || (addToStock && !expiry)}
-            className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold rounded-xl"
+            className="flex-1 py-3 bg-brand-navy hover:bg-brand-navy-dark disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold rounded-xl"
           >
             {loading ? '…' : 'Bestätigen'}
           </button>
@@ -631,7 +631,7 @@ function ExpiredDialog({
             type="checkbox"
             checked={addToStock}
             onChange={(e) => setAddToStock(e.target.checked)}
-            className="w-5 h-5 rounded accent-red-600"
+            className="w-5 h-5 rounded accent-brand-navy"
           />
           <span className="text-sm font-medium">Neue Charge zum Bestand hinzufügen</span>
         </label>
@@ -645,7 +645,7 @@ function ExpiredDialog({
                 value={qtyInput}
                 onChange={(e) => setQtyInput(e.target.value)}
                 onBlur={() => setQtyInput((v) => normalizeQuantityInput(v))}
-                className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
               />
             </div>
             <MonthPicker value={expiry} onChange={setExpiry} label="Neuer Ablaufmonat" required />
@@ -658,7 +658,7 @@ function ExpiredDialog({
           <button
             onClick={handleConfirm}
             disabled={loading || (addToStock && !expiry)}
-            className="flex-1 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold rounded-xl"
+            className="flex-1 py-3 bg-brand-navy hover:bg-brand-navy-dark disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold rounded-xl"
           >
             {loading ? '…' : 'Bestätigen'}
           </button>

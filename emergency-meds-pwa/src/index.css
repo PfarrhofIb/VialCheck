@@ -1,16 +1,24 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-navy: #1b3a5c;
+  --color-brand-navy-dark: #153049;
+  --color-brand-navy-50: #e8eef4;
+  --color-brand-green: #2ecc71;
+  --color-brand-green-dark: #27ae60;
+}
+
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
   }
-  
+
   body {
     @apply text-gray-900 bg-gray-50;
     overscroll-behavior: none;
   }
-  
+
   * {
     -webkit-font-smoothing: antialiased;
   }

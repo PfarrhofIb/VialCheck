@@ -115,7 +115,7 @@ export default function AddMedicationSheet({
         type="submit"
         form="add-med-form"
         disabled={!canSave || loading}
-        className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors"
+        className="flex-1 bg-brand-navy hover:bg-brand-navy-dark disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors"
       >
         {loading ? 'Speichern…' : 'Speichern'}
       </button>
@@ -135,7 +135,7 @@ export default function AddMedicationSheet({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={ocrLoading}
-            className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 rounded-xl py-3 text-sm text-gray-600 hover:border-red-400 hover:text-red-600 transition-colors"
+            className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 rounded-xl py-3 text-sm text-gray-600 hover:border-brand-navy hover:text-brand-navy transition-colors"
           >
             {ocrLoading ? (
               <span className="animate-pulse text-xs">OCR läuft…</span>
@@ -155,7 +155,7 @@ export default function AddMedicationSheet({
             type="button"
             onClick={() => galleryRef.current?.click()}
             disabled={ocrLoading}
-            className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 rounded-xl py-3 text-sm text-gray-600 hover:border-red-400 hover:text-red-600 transition-colors"
+            className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 rounded-xl py-3 text-sm text-gray-600 hover:border-brand-navy hover:text-brand-navy transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -201,7 +201,7 @@ export default function AddMedicationSheet({
         <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat" required />
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Menge <span className="text-red-500">*</span></label>
+          <label className="text-sm font-medium text-gray-700">Menge <span className="text-brand-navy">*</span></label>
           <div className="flex items-center gap-2">
             {QUICK_QUANTITY_OPTIONS.map((n) => (
               <button
@@ -209,7 +209,7 @@ export default function AddMedicationSheet({
                 type="button"
                 onClick={() => setQtyInput(String(n))}
                 className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-                  parseQuantityInput(qtyInput) === n ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  parseQuantityInput(qtyInput) === n ? 'bg-brand-navy text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
               >
                 {n}
@@ -222,7 +222,7 @@ export default function AddMedicationSheet({
             value={qtyInput}
             onChange={(e) => setQtyInput(e.target.value)}
             onBlur={() => setQtyInput((v) => normalizeQuantityInput(v))}
-            className="mt-1 border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="mt-1 border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
           />
         </div>
 
@@ -233,7 +233,7 @@ export default function AddMedicationSheet({
               type="number" step="0.1" min="0"
               value={mlPerAmpule}
               onChange={(e) => setMlPerAmpule(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
               placeholder="5"
             />
           </div>
@@ -243,7 +243,7 @@ export default function AddMedicationSheet({
               type="number" step="0.1" min="0"
               value={mgPerMl}
               onChange={(e) => setMgPerMl(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
               placeholder="10"
             />
           </div>

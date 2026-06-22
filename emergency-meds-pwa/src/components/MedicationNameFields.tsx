@@ -18,7 +18,7 @@ export default function MedicationNameFields({
   onDisplayNameChange,
 }: MedicationNameFieldsProps) {
   const inputClass =
-    'flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-red-500'
+    'flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy'
 
   return (
     <div className="space-y-3">
@@ -37,7 +37,7 @@ export default function MedicationNameFields({
               name="displayName"
               checked={displayName === 'handelsname'}
               onChange={() => onDisplayNameChange('handelsname')}
-              className="w-4 h-4 accent-red-600"
+              className="w-4 h-4 accent-brand-navy"
             />
             <span className="text-[10px] text-gray-500 leading-tight text-center w-14">Überschrift</span>
           </label>
@@ -59,7 +59,7 @@ export default function MedicationNameFields({
               name="displayName"
               checked={displayName === 'wirkstoffname'}
               onChange={() => onDisplayNameChange('wirkstoffname')}
-              className="w-4 h-4 accent-red-600"
+              className="w-4 h-4 accent-brand-navy"
             />
             <span className="text-[10px] text-gray-500 leading-tight text-center w-14">Überschrift</span>
           </label>

@@ -46,12 +46,12 @@ export function isExpiringSoon(expiryDate: string, months = 3): boolean {
  * Gibt die CSS-Klasse für ein Ablaufdatum zurück:
  * - 'text-red-600' wenn abgelaufen
  * - 'text-yellow-500' wenn bald ablaufend
- * - 'text-green-600' sonst
+ * - 'text-brand-green' sonst
  */
 export function expiryColorClass(expiryDate: string): string {
   if (isExpired(expiryDate)) return 'text-red-600'
   if (isExpiringSoon(expiryDate)) return 'text-yellow-500'
-  return 'text-green-600'
+  return 'text-brand-green'
 }
 
 /** Gibt den frühesten Ablaufmonat eines Medikaments zurück */

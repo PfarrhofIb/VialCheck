@@ -54,7 +54,7 @@ export default function AddBatchSheet({ med, initialExpiry = '', onClose }: AddB
         type="submit"
         form="add-batch-form"
         disabled={!expiry || loading}
-        className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors"
+        className="flex-1 bg-brand-navy hover:bg-brand-navy-dark disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors"
       >
         {loading ? 'Speichern…' : 'Speichern'}
       </button>
@@ -82,7 +82,7 @@ export default function AddBatchSheet({ med, initialExpiry = '', onClose }: AddB
                 type="button"
                 onClick={() => setQtyInput(String(n))}
                 className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-                  parseQuantityInput(qtyInput) === n ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  parseQuantityInput(qtyInput) === n ? 'bg-brand-navy text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }`}
               >
                 +{n}
@@ -96,7 +96,7 @@ export default function AddBatchSheet({ med, initialExpiry = '', onClose }: AddB
             value={qtyInput}
             onChange={(e) => setQtyInput(e.target.value)}
             onBlur={() => setQtyInput((v) => normalizeQuantityInput(v))}
-            className="mt-1 border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="mt-1 border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
             placeholder="Oder eigene Zahl eingeben"
           />
         </div>

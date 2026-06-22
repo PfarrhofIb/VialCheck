@@ -16,7 +16,7 @@ export default defineConfig({
         short_name: 'VialCheck',
         description: 'Notfallmedikamenten-Bestand verwalten',
         lang: 'de',
-        theme_color: '#ffffff',
+        theme_color: '#1b3a5c',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',

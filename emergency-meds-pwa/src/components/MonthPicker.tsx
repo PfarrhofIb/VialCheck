@@ -42,14 +42,14 @@ export default function MonthPicker({ value, onChange, label, required, includes
   }
 
   const selectClass =
-    'border border-gray-300 rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-red-500 w-full'
+    'border border-gray-300 rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy w-full'
 
   return (
     <div className="flex flex-col gap-1">
       {label && (
         <label className="text-sm font-medium text-gray-700">
           {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
+          {required && <span className="text-brand-navy ml-0.5">*</span>}
         </label>
       )}
       <div className="grid grid-cols-2 gap-2">

@@ -115,7 +115,7 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
               min="0"
               value={mlPerAmpule}
               onChange={(e) => setMlPerAmpule(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
               placeholder="z.B. 5"
             />
           </div>
@@ -127,7 +127,7 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
               min="0"
               value={mgPerMl}
               onChange={(e) => setMgPerMl(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
               placeholder="z.B. 10"
             />
           </div>
@@ -141,7 +141,7 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
               <button
                 type="button"
                 onClick={handleDeletePhoto}
-                className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                className="absolute -top-1 -right-1 bg-brand-navy text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
               >
                 ×
               </button>
@@ -152,7 +152,7 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={ocrLoading}
-                className="flex-1 flex items-center justify-center gap-2 text-sm text-red-600 border border-red-300 rounded-xl px-3 py-2 hover:bg-red-50"
+                className="flex-1 flex items-center justify-center gap-2 text-sm text-brand-navy border border-brand-navy/30 rounded-xl px-3 py-2 hover:bg-brand-navy-50"
               >
                 {ocrLoading ? 'OCR läuft…' : '📷 Foto aufnehmen'}
               </button>
@@ -202,7 +202,7 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
           <button
             type="submit"
             disabled={loading || !canSave}
-            className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 text-white font-semibold py-3 rounded-xl"
+            className="flex-1 bg-brand-navy hover:bg-brand-navy-dark disabled:bg-gray-200 text-white font-semibold py-3 rounded-xl"
           >
             {loading ? 'Speichern…' : 'Speichern'}
           </button>

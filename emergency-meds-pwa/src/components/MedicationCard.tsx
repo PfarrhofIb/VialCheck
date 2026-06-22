@@ -52,7 +52,7 @@ export default function MedicationCard({ med, onConsume, onEdit, onAddBatch }: M
         <button
           onClick={() => onConsume(med)}
           disabled={med.totalQuantity === 0}
-          className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:text-gray-400 text-white text-sm font-medium py-2 px-3 rounded-xl transition-colors"
+          className="flex-1 bg-brand-navy hover:bg-brand-navy-dark disabled:bg-gray-200 disabled:text-gray-400 text-white text-sm font-medium py-2 px-3 rounded-xl transition-colors"
         >
           1 Verbraucht
         </button>
