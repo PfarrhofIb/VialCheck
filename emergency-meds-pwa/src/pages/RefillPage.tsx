@@ -141,7 +141,7 @@ export default function RefillPage() {
               <section>
                 <h2 className="text-sm font-semibold text-brand-navy mb-1">Bestellt</h2>
                 <p className="text-xs text-gray-500 mb-3">
-                  Lieferung da — mit „Aufgefüllt“ oder „Ersetzt“ ein sortieren
+                  Lieferung da — mit „Aufgefüllt“ oder „Ersetzt“ einsortieren
                 </p>
                 <div className="space-y-3">
                   {orderedRefill.map((item) => (
@@ -356,7 +356,7 @@ function VerbrauchtCard({
           )}
           <p className="text-sm text-gray-500 mt-0.5">Benötigt: {item.amount_needed}×</p>
           {ordered && (
-            <p className="text-xs text-brand-navy mt-1">Bereit zum Ein sortieren</p>
+            <p className="text-xs text-brand-navy mt-1">Bereit zum Einsortieren</p>
           )}
         </div>
         <RefillActionButtons
@@ -416,7 +416,7 @@ function ExpiryCard({
             ))}
           </div>
           {ordered && (
-            <p className="text-xs text-brand-navy mt-1">Bereit zum Ein sortieren</p>
+            <p className="text-xs text-brand-navy mt-1">Bereit zum Einsortieren</p>
           )}
         </div>
         <RefillActionButtons
