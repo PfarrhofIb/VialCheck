@@ -1,0 +1,121 @@
+---
+description: Projektkontext, Architektur und Dev-Setup für VialCheck (PWA + Flutter)
+alwaysApply: true
+---
+
+# VialCheck – Projektkontext
+
+Offline-First App (**VialCheck**) zur Verwaltung von Notfallmedikamenten mit Barcode/DataMatrix-Scanner. UI-Sprache: **Deutsch**.
+
+**Aktiver Fokus:** PWA in `emergency-meds-pwa/` (React/TypeScript).  
+**Parallel:** Flutter/Android-App im Repo-Root (älter, weniger Features).
+
+---
+
+## PWA (`emergency-meds-pwa/`) — Hauptprojekt
+
+### Tech-Stack
+
+- **React 19** + **TypeScript** + **Vite 8**, **Tailwind CSS v4**
+- **State:** Zustand → `useStore` (`src/hooks/useStore.ts`)
+- **DB:** Dexie.js → IndexedDB `emergency-meds`
+- **PWA:** vite-plugin-pwa (Service Worker, offline-first)
+- **Scanner:** @zxing/browser; **OCR:** Tesseract.js; **GS1:** `src/utils/barcode.ts`
+- **Datum:** Ablauf als `yyyy-MM` in DB, `MM.yyyy` in UI
+
+### Projektstruktur
+
+```
+emergency-meds-pwa/src/
+├── App.tsx                    # Tab-Bar, Badge, ExpiryReminderModal
+├── db/schema.ts, queries.ts, backup.ts
+├── hooks/useStore.ts, useExpiryReminder.ts
+├── pages/InventoryPage, ScannerPage, RefillPage
+├── components/                # Sheets, Modals, MedicationCard, BackupSheet, …
+└── utils/expiry.ts, expiryReminder.ts, medicationDisplay.ts, quantityInput.ts, …
+```
+
+### Datenbank (IndexedDB v2)
+
+- **medications:** id, barcode (UNIQUE), handelsname, wirkstoffname, display_name, photo_blob_id, ml_per_ampule, mg_per_ml
+- **medication_batches:** id, medication_id, expiry_date (yyyy-MM), quantity
+- **refill_list:** id, medication_id, amount_needed
+- **photos:** id, blob
+- v1→v2 Migration: `name` → handelsname/wirkstoffname/display_name
+
+### Kernlogik (implementiert)
+
+| Tab | Verhalten |
+|-----|-----------|
+| **Bestand** | Alphabetisch; Chargen pro MHD; rot/gelb/grün; Verbrauch mit Charge; Edit; Backup JSON |
+| **Scanner** | Kamera/Galerie/Test; GS1+OCR; Neuanlage; Merge nur bei gleichem Handelsnamen |
+| **Nachfüllen** | Verbraucht + **Ablauf** (oben abgelaufen, darunter bald ablaufend ≤3 Mon.) |
+
+Weitere Details:
+
+- MHD-Farben: abgelaufen rot, ≤3 Monate gelb (`isExpiringSoon`), sonst grün
+- Mengen-Schnellauswahl: **1-2-3-5** (`QUICK_QUANTITY_OPTIONS` in `quantityInput.ts`)
+- Handels-/Wirkstoffname mit wählbarer Überschrift; mg/Ampulle = ml × mg/ml
+- Monatsübersicht am letzten Tag des Monats (Modal + optionale Notification beim App-Start)
+- Tab-Badge Nachfüllen: verbraucht + abgelaufen + bald ablaufend
+
+### Dev-Setup PWA (Windows, User afri8)
+
+```powershell
+cd C:\Users\afri8\Documents\emergency_meds\emergency-meds-pwa
+.\npm_run.bat run dev          # localhost:5173
+.\npm_run.bat run build
+```
+
+**Handy (HTTPS):** Aus Repo-Root `.\serve_pwa.bat` → Tailscale Serve  
+URL: `https://laptop-onifsvh7.tailfd525a.ts.net`
+
+### Coding-Konventionen (PWA)
+
+- Struktur: types → db/queries → hooks → pages/components
+- Zustand beibehalten (kein Redux o.ä.)
+- Minimale Diffs; deutsche UI-Texte
+- Kommentare nur bei nicht-offensichtlicher Logik
+
+### Bekannte Hinweise (PWA)
+
+- PWA-Install braucht HTTPS (Tailscale) oder localhost
+- Kein zuverlässiger Hintergrund-Push ohne Server
+- Backup manuell; IndexedDB gerätespezifisch
+
+### Noch offen (PWA)
+
+- Hintergrund-Push / Sync zwischen Geräten
+- Tests
+
+---
+
+## Flutter-App (Repo-Root) — Legacy
+
+Offline-First **Android-App** (Flutter/Dart), Material 3, Rot-Akzente.
+
+### Tech-Stack
+
+- **Flutter** ≥ 3.3, **provider** → `MedicationProvider`
+- **DB:** sqflite → `DatabaseHelper.instance`
+- **Scanner:** mobile_scanner
+
+### Build
+
+```powershell
+cd C:\Users\afri8\Documents\emergency_meds
+.\flutter_run.bat run
+.\flutter_run.bat build apk
+```
+
+| Tool | Pfad |
+|------|------|
+| Flutter SDK 3.44.2 | `D:\Programme\Flutter\flutter` |
+| Android SDK | `C:\Users\afri8\AppData\Local\Android\Sdk` |
+| JAVA_HOME | `C:\Program Files\Android\Android Studio1\jbr` |
+
+`flutter_run.bat` setzt `JAVA_HOME` und `ANDROID_HOME` automatisch.
+
+### Flutter vs. PWA
+
+Flutter hat einfacheres Schema (medications ohne Chargen-Modell v2, kein Backup/OCR/GS1 in gleichem Umfang). Neue Features primär in der PWA umsetzen.
