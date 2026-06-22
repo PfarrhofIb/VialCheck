@@ -21,10 +21,14 @@ cd emergency-meds-pwa
 .\npm_run.bat run dev
 ```
 
-Handy über HTTPS:
+**Produktion:** https://vialcheck.app (Vercel, Auto-Deploy bei Push auf `main`)
+
+**GitHub:** https://github.com/PfarrhofIb/VialCheck
+
+Handy lokal testen (Dev, PC muss laufen):
 
 ```powershell
 .\serve_pwa.bat
 ```
 
-Cursor-Regel mit vollständigem Projektkontext: `.cursor/rules/emergency-meds-project.mdc`
+Cursor-Regel mit vollständigem Projektkontext (inkl. Hosting/DNS): `.cursor/rules/emergency-meds-project.mdc`

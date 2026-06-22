@@ -90,8 +90,23 @@ cd emergency-meds-pwa
 Aus dem Repo-Root:
 
 ```powershell
-.\serve_pwa.bat           # Build + http-server + Tailscale Serve
+.\serve_pwa.bat           # Build + http-server + Tailscale Serve (nur Dev)
 ```
+
+## Produktion (Vercel + Domain)
+
+| | |
+|---|---|
+| **Live-URL** | https://vialcheck.app |
+| **Vercel** | Projekt *VialCheck*, Root Directory `emergency-meds-pwa` |
+| **GitHub** | https://github.com/PfarrhofIb/VialCheck — Push auf `main` → Auto-Deploy |
+| **Domain** | `vialcheck.app` bei uniteddomains |
+| **DNS** | A `@` + A `*` → `216.198.79.1` (Vercel) |
+| **SPA-Routing** | `vercel.json` im PWA-Ordner |
+
+Redirect: `vialcheck-eta.vercel.app` → `vialcheck.app` (307).
+
+Keine Server-Env-Variablen. Daten bleiben lokal in IndexedDB.
 
 ## Testen
 
@@ -103,9 +118,14 @@ Aus dem Repo-Root:
 | Chrome → „App installieren" | PWA-Installation (HTTPS nötig) |
 | Scanner am PC | Tab Scanner → „Test-Modus" → Barcode manuell |
 
-## Handy-Zugriff via Tailscale Serve (HTTPS)
+## Handy-Zugriff (Produktion)
 
-Feste HTTPS-URL im Tailnet – für PWA-Installation auf dem Handy.
+1. Chrome → https://vialcheck.app
+2. Menü → **App installieren**
+
+## Handy-Zugriff via Tailscale Serve (Dev)
+
+Alternative für lokale Entwicklung — feste HTTPS-URL im Tailnet, PC muss laufen.
 
 ### Einmalig: Tailscale Serve aktivieren
 
@@ -142,7 +162,7 @@ Funktioniert im WLAN und unterwegs (PC muss laufen, Tailscale aktiv).
 
 - Daten liegen lokal in IndexedDB; Backup manuell als JSON (Google Drive etc.)
 - Nach Code-Änderungen: neu bauen + App auf dem Handy neu laden
-- PWA-Installation erfordert **HTTPS** (Tailscale Serve) oder localhost
+- PWA-Installation: Produktion über **vialcheck.app**; Dev über Tailscale oder localhost
 - Monats-Benachrichtigung: kein zuverlässiger Hintergrund-Push ohne Server
 
 ## Noch offen / Ideen

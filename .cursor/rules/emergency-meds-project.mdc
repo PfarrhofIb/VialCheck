@@ -67,8 +67,53 @@ cd C:\Users\afri8\Documents\emergency_meds\emergency-meds-pwa
 .\npm_run.bat run build
 ```
 
-**Handy (HTTPS):** Aus Repo-Root `.\serve_pwa.bat` → Tailscale Serve  
-URL: `https://laptop-onifsvh7.tailfd525a.ts.net`
+**Lokal am Handy (Dev):** Aus Repo-Root `.\serve_pwa.bat` → Tailscale Serve  
+URL: `https://laptop-onifsvh7.tailfd525a.ts.net` (nur wenn PC läuft; Produktion siehe unten)
+
+### Hosting & Deployment (Stand: Juni 2026)
+
+Einrichtung abgeschlossen — GitHub + Vercel + eigene Domain.
+
+| Was | Wert |
+|-----|------|
+| **GitHub** | https://github.com/PfarrhofIb/VialCheck (Public; gesamtes Repo: PWA + Flutter) |
+| **Git-Remote** | `origin` → `https://github.com/PfarrhofIb/VialCheck.git`, Branch `main` |
+| **Produktion (primär)** | https://vialcheck.app |
+| **Vercel-Subdomain** | https://vialcheck-eta.vercel.app → 307-Redirect auf `vialcheck.app` |
+| **Vercel Root Directory** | `emergency-meds-pwa` |
+| **Build** | `npm run build` → Output `dist/` |
+| **Env-Variablen** | keine (reine Client-App) |
+| **Auto-Deploy** | Push auf `main` → Vercel baut neu |
+
+**Domain & DNS (uniteddomains):**
+
+- Domain **vialcheck.app** bei uniteddomains (kein Webspace nötig)
+- DNS unter **DNS-Einträge → A (IPv4 Adressen)**:
+  - Subdomain leer (`@`): **A** → `216.198.79.1` (Vercel-Empfehlung 2026)
+  - Subdomain `*`: **A** → `216.198.79.1` (Wildcard)
+- Alte uniteddomains-Standard-IP `89.31.143.90` wurde entfernt/ersetzt
+- Legacy-Vercel-IP `76.76.21.21` funktionierte ebenfalls; bei Vercel-Hinweis „DNS Change Recommended“ auf `216.198.79.1` umstellen
+- SSL/HTTPS: automatisch durch Vercel (Let’s Encrypt)
+
+**Vercel-Konfiguration im Repo:**
+
+- `emergency-meds-pwa/vercel.json` — SPA-Rewrites für React Router (`/`, `/scanner`, `/nachfullen`)
+- Ohne diese Datei: direkter Aufruf von Unterrouten liefert 404
+
+**Daten & Privatsphäre:**
+
+- Medikamentendaten in **IndexedDB** pro Gerät/Browser — nichts auf GitHub/Vercel
+- Backup weiterhin manuell als JSON in der App
+- Vercel-URL und `vialcheck.app` sind öffentlich erreichbar (kein Passwortschutz)
+
+**Workflow nach Code-Änderungen:**
+
+```powershell
+git add .
+git commit -m "…"
+git push origin main
+# → Vercel deployt automatisch; nach ~1–2 Min. live auf vialcheck.app
+```
 
 ### Coding-Konventionen (PWA)
 
@@ -79,7 +124,7 @@ URL: `https://laptop-onifsvh7.tailfd525a.ts.net`
 
 ### Bekannte Hinweise (PWA)
 
-- PWA-Install braucht HTTPS (Tailscale) oder localhost
+- PWA-Install: Produktion über https://vialcheck.app; lokal localhost oder Tailscale
 - Kein zuverlässiger Hintergrund-Push ohne Server
 - Backup manuell; IndexedDB gerätespezifisch
 
