@@ -17,11 +17,12 @@ import MedicationNameDisplay from '../components/MedicationNameDisplay'
 import type { Medication } from '../types'
 import { normalizeQuantityInput, parseQuantityInput } from '../utils/quantityInput'
 
+type ExpiryGroup = { medication: Medication; batches: MedicationBatch[] }
+
 export default function RefillPage() {
   const { refillItems, expiredGroups, expiringSoonGroups, orderMarkers, refresh } = useStore()
   const orderedBatchIds = getOrderedBatchIds(orderMarkers)
   const orderedRefillIds = getOrderedRefillIds(orderMarkers)
-  const [activeTab, setActiveTab] = useState<'verbraucht' | 'abgelaufen'>('verbraucht')
   const [refillDialog, setRefillDialog] = useState<RefillItemWithName | null>(null)
   const [expiredDialog, setExpiredDialog] = useState<{
     medication: Medication
@@ -29,73 +30,186 @@ export default function RefillPage() {
     soon: boolean
   } | null>(null)
 
-  const expiryCount = expiredGroups.length + expiringSoonGroups.length
+  const { pending: pendingRefill, ordered: orderedRefill } = splitRefillItems(refillItems, orderedRefillIds)
+  const { pending: pendingExpired, ordered: orderedExpired } = splitExpiryGroups(expiredGroups, orderedBatchIds)
+  const { pending: pendingSoon, ordered: orderedSoon } = splitExpiryGroups(expiringSoonGroups, orderedBatchIds)
+
+  const hasItems =
+    refillItems.length > 0 || expiredGroups.length > 0 || expiringSoonGroups.length > 0
+  const hasOrdered =
+    orderedRefill.length > 0 || orderedExpired.length > 0 || orderedSoon.length > 0
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-0 sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-gray-900 mb-3">Nachfüllen</h1>
-        <div className="flex gap-0">
-          {(['verbraucht', 'abgelaufen'] as const).map((tab) => {
-            const count = tab === 'verbraucht' ? refillItems.length : expiryCount
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize ${
-                  activeTab === tab
-                    ? 'border-brand-navy text-brand-navy'
-                    : 'border-transparent text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                {tab === 'verbraucht' ? 'Verbraucht' : 'Ablauf'}
-                {count > 0 && (
-                  <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                    activeTab === tab ? 'bg-brand-navy-50 text-brand-navy' : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
+      <div className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+        <h1 className="text-xl font-bold text-gray-900">Nachfüllen</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {activeTab === 'verbraucht' && (
-          <VerbrauchtSection
-            items={refillItems}
-            orderedRefillIds={orderedRefillIds}
-            onOrder={async (item) => {
-              await markRefillOrdered(item.id!, item.medication_id)
-              await refresh()
-            }}
-            onUnorder={async (item) => {
-              await unmarkRefillOrdered(item.id!)
-              await refresh()
-            }}
-            onRefill={setRefillDialog}
-          />
-        )}
-        {activeTab === 'abgelaufen' && (
-          <AbgelaufenSection
-            expiredGroups={expiredGroups}
-            expiringSoonGroups={expiringSoonGroups}
-            orderedBatchIds={orderedBatchIds}
-            onOrder={async (g) => {
-              await markBatchesOrdered(g.batches, g.medication.id!)
-              await refresh()
-            }}
-            onUnorder={async (g) => {
-              await unmarkBatchesOrdered(g.batches)
-              await refresh()
-            }}
-            onReplace={(g, soon) =>
-              setExpiredDialog({ medication: g.medication, batches: g.batches, soon })
-            }
-          />
+        {!hasItems ? (
+          <EmptyRefillState />
+        ) : (
+          <div className="space-y-8">
+            {pendingRefill.length > 0 && (
+              <section>
+                <h2 className="text-sm font-semibold text-gray-700 mb-3">Verbraucht</h2>
+                <div className="space-y-3">
+                  {pendingRefill.map((item) => (
+                    <VerbrauchtCard
+                      key={item.id}
+                      item={item}
+                      ordered={false}
+                      onOrder={async () => {
+                        await markRefillOrdered(item.id!, item.medication_id)
+                        await refresh()
+                      }}
+                      onUnorder={async () => {
+                        await unmarkRefillOrdered(item.id!)
+                        await refresh()
+                      }}
+                      onRefill={() => setRefillDialog(item)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {pendingExpired.length > 0 && (
+              <section>
+                <h2 className="text-sm font-semibold text-red-600 mb-3">Abgelaufen</h2>
+                <div className="space-y-3">
+                  {pendingExpired.map((group) => (
+                    <ExpiryCard
+                      key={`expired-${group.medication.id}`}
+                      group={group}
+                      variant="expired"
+                      ordered={false}
+                      onOrder={async () => {
+                        await markBatchesOrdered(group.batches, group.medication.id!)
+                        await refresh()
+                      }}
+                      onUnorder={async () => {
+                        await unmarkBatchesOrdered(group.batches)
+                        await refresh()
+                      }}
+                      onReplace={() =>
+                        setExpiredDialog({
+                          medication: group.medication,
+                          batches: group.batches,
+                          soon: false,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {pendingSoon.length > 0 && (
+              <section>
+                <h2 className="text-sm font-semibold text-yellow-600 mb-1">Bald ablaufend</h2>
+                <p className="text-xs text-gray-500 mb-3">Läuft in den nächsten 3 Monaten ab</p>
+                <div className="space-y-3">
+                  {pendingSoon.map((group) => (
+                    <ExpiryCard
+                      key={`soon-${group.medication.id}`}
+                      group={group}
+                      variant="soon"
+                      ordered={false}
+                      onOrder={async () => {
+                        await markBatchesOrdered(group.batches, group.medication.id!)
+                        await refresh()
+                      }}
+                      onUnorder={async () => {
+                        await unmarkBatchesOrdered(group.batches)
+                        await refresh()
+                      }}
+                      onReplace={() =>
+                        setExpiredDialog({
+                          medication: group.medication,
+                          batches: group.batches,
+                          soon: true,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {hasOrdered && (
+              <section>
+                <h2 className="text-sm font-semibold text-brand-navy mb-1">Bestellt</h2>
+                <p className="text-xs text-gray-500 mb-3">
+                  Lieferung da — mit „Aufgefüllt“ oder „Ersetzt“ ein sortieren
+                </p>
+                <div className="space-y-3">
+                  {orderedRefill.map((item) => (
+                    <VerbrauchtCard
+                      key={`ordered-refill-${item.id}`}
+                      item={item}
+                      ordered
+                      onOrder={async () => {
+                        await markRefillOrdered(item.id!, item.medication_id)
+                        await refresh()
+                      }}
+                      onUnorder={async () => {
+                        await unmarkRefillOrdered(item.id!)
+                        await refresh()
+                      }}
+                      onRefill={() => setRefillDialog(item)}
+                    />
+                  ))}
+                  {orderedExpired.map((group) => (
+                    <ExpiryCard
+                      key={`ordered-expired-${group.medication.id}`}
+                      group={group}
+                      variant="expired"
+                      ordered
+                      onOrder={async () => {
+                        await markBatchesOrdered(group.batches, group.medication.id!)
+                        await refresh()
+                      }}
+                      onUnorder={async () => {
+                        await unmarkBatchesOrdered(group.batches)
+                        await refresh()
+                      }}
+                      onReplace={() =>
+                        setExpiredDialog({
+                          medication: group.medication,
+                          batches: group.batches,
+                          soon: false,
+                        })
+                      }
+                    />
+                  ))}
+                  {orderedSoon.map((group) => (
+                    <ExpiryCard
+                      key={`ordered-soon-${group.medication.id}`}
+                      group={group}
+                      variant="soon"
+                      ordered
+                      onOrder={async () => {
+                        await markBatchesOrdered(group.batches, group.medication.id!)
+                        await refresh()
+                      }}
+                      onUnorder={async () => {
+                        await unmarkBatchesOrdered(group.batches)
+                        await refresh()
+                      }}
+                      onReplace={() =>
+                        setExpiredDialog({
+                          medication: group.medication,
+                          batches: group.batches,
+                          soon: true,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
         )}
       </div>
 
@@ -136,7 +250,18 @@ export default function RefillPage() {
   )
 }
 
-// ──────────── Verbraucht Section ────────────
+function EmptyRefillState() {
+  return (
+    <div className="text-center py-16 text-gray-400">
+      <svg className="w-16 h-16 mx-auto mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <p className="font-medium text-gray-500">Alles aufgefüllt</p>
+      <p className="text-sm mt-1">Verbrauchte und ablaufende Medikamente erscheinen hier</p>
+    </div>
+  )
+}
 
 function splitRefillItems(items: RefillItemWithName[], orderedRefillIds: Set<number>) {
   const pending: RefillItemWithName[] = []
@@ -144,6 +269,16 @@ function splitRefillItems(items: RefillItemWithName[], orderedRefillIds: Set<num
   for (const item of items) {
     if (item.id != null && orderedRefillIds.has(item.id)) ordered.push(item)
     else pending.push(item)
+  }
+  return { pending, ordered }
+}
+
+function splitExpiryGroups(groups: ExpiryGroup[], orderedBatchIds: Set<number>) {
+  const pending: ExpiryGroup[] = []
+  const ordered: ExpiryGroup[] = []
+  for (const group of groups) {
+    if (isBatchGroupOrdered(group.batches, orderedBatchIds)) ordered.push(group)
+    else pending.push(group)
   }
   return { pending, ordered }
 }
@@ -236,89 +371,6 @@ function VerbrauchtCard({
   )
 }
 
-function VerbrauchtSection({
-  items,
-  orderedRefillIds,
-  onOrder,
-  onUnorder,
-  onRefill,
-}: {
-  items: RefillItemWithName[]
-  orderedRefillIds: Set<number>
-  onOrder: (item: RefillItemWithName) => void
-  onUnorder: (item: RefillItemWithName) => void
-  onRefill: (item: RefillItemWithName) => void
-}) {
-  if (items.length === 0) {
-    return (
-      <div className="text-center py-16 text-gray-400">
-        <svg className="w-16 h-16 mx-auto mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p className="font-medium text-gray-500">Alles aufgefüllt</p>
-        <p className="text-sm mt-1">Hier erscheinen verbrauchte Medikamente</p>
-      </div>
-    )
-  }
-
-  const { pending, ordered } = splitRefillItems(items, orderedRefillIds)
-
-  return (
-    <div className="space-y-6">
-      {pending.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Zu besorgen</h2>
-          <div className="space-y-3">
-            {pending.map((item) => (
-              <VerbrauchtCard
-                key={item.id}
-                item={item}
-                ordered={false}
-                onOrder={() => onOrder(item)}
-                onUnorder={() => onUnorder(item)}
-                onRefill={() => onRefill(item)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-      {ordered.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-brand-navy mb-3">Bestellt</h2>
-          <p className="text-xs text-gray-500 mb-3">Lieferung da — zum Ein sortieren mit „Aufgefüllt“ bestätigen</p>
-          <div className="space-y-3">
-            {ordered.map((item) => (
-              <VerbrauchtCard
-                key={item.id}
-                item={item}
-                ordered
-                onOrder={() => onOrder(item)}
-                onUnorder={() => onUnorder(item)}
-                onRefill={() => onRefill(item)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
-  )
-}
-
-// ──────────── Ablauf Section ────────────
-
-type ExpiryGroup = { medication: Medication; batches: MedicationBatch[] }
-
-function splitExpiryGroups(groups: ExpiryGroup[], orderedBatchIds: Set<number>) {
-  const pending: ExpiryGroup[] = []
-  const ordered: ExpiryGroup[] = []
-  for (const group of groups) {
-    if (isBatchGroupOrdered(group.batches, orderedBatchIds)) ordered.push(group)
-    else pending.push(group)
-  }
-  return { pending, ordered }
-}
-
 function ExpiryCard({
   group,
   variant,
@@ -378,131 +430,6 @@ function ExpiryCard({
     </div>
   )
 }
-
-function ExpiryGroupList({
-  groups,
-  variant,
-  orderedBatchIds,
-  onOrder,
-  onUnorder,
-  onReplace,
-}: {
-  groups: ExpiryGroup[]
-  variant: 'expired' | 'soon'
-  orderedBatchIds: Set<number>
-  onOrder: (g: ExpiryGroup) => void
-  onUnorder: (g: ExpiryGroup) => void
-  onReplace: (g: ExpiryGroup) => void
-}) {
-  const { pending, ordered } = splitExpiryGroups(groups, orderedBatchIds)
-  if (!pending.length && !ordered.length) return null
-
-  return (
-    <>
-      {pending.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Zu besorgen</h3>
-          <div className="space-y-3">
-            {pending.map((group) => (
-              <ExpiryCard
-                key={`pending-${group.medication.id}`}
-                group={group}
-                variant={variant}
-                ordered={false}
-                onOrder={() => onOrder(group)}
-                onUnorder={() => onUnorder(group)}
-                onReplace={() => onReplace(group)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-      {ordered.length > 0 && (
-        <div>
-          <h3 className="text-xs font-semibold text-brand-navy mb-2 uppercase tracking-wide">Bestellt</h3>
-          <p className="text-xs text-gray-500 mb-2">Lieferung da — mit „Ersetzt“ ein sortieren</p>
-          <div className="space-y-3">
-            {ordered.map((group) => (
-              <ExpiryCard
-                key={`ordered-${group.medication.id}`}
-                group={group}
-                variant={variant}
-                ordered
-                onOrder={() => onOrder(group)}
-                onUnorder={() => onUnorder(group)}
-                onReplace={() => onReplace(group)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-function AbgelaufenSection({
-  expiredGroups,
-  expiringSoonGroups,
-  orderedBatchIds,
-  onOrder,
-  onUnorder,
-  onReplace,
-}: {
-  expiredGroups: ExpiryGroup[]
-  expiringSoonGroups: ExpiryGroup[]
-  orderedBatchIds: Set<number>
-  onOrder: (g: ExpiryGroup) => void
-  onUnorder: (g: ExpiryGroup) => void
-  onReplace: (g: ExpiryGroup, soon: boolean) => void
-}) {
-  if (expiredGroups.length === 0 && expiringSoonGroups.length === 0) {
-    return (
-      <div className="text-center py-16 text-gray-400">
-        <svg className="w-16 h-16 mx-auto mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p className="font-medium text-gray-500">Keine ablaufenden Chargen</p>
-        <p className="text-sm mt-1">Alle Medikamente sind noch lange gültig</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {expiredGroups.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-red-600 mb-3">Abgelaufen</h2>
-          <ExpiryGroupList
-            groups={expiredGroups}
-            variant="expired"
-            orderedBatchIds={orderedBatchIds}
-            onOrder={onOrder}
-            onUnorder={onUnorder}
-            onReplace={(g) => onReplace(g, false)}
-          />
-        </section>
-      )}
-
-      {expiringSoonGroups.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-yellow-600 mb-3">Bald ablaufend</h2>
-          <p className="text-xs text-gray-500 mb-3">Läuft in den nächsten 3 Monaten ab</p>
-          <ExpiryGroupList
-            groups={expiringSoonGroups}
-            variant="soon"
-            orderedBatchIds={orderedBatchIds}
-            onOrder={onOrder}
-            onUnorder={onUnorder}
-            onReplace={(g) => onReplace(g, true)}
-          />
-        </section>
-      )}
-    </div>
-  )
-}
-
-// ──────────── Dialoge ────────────
 
 function RefillDialog({
   item,

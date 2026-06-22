@@ -81,7 +81,7 @@ export default function ExpiryReminderModal({
           onClick={onClose}
           className="block text-center text-sm font-medium text-brand-navy mb-4"
         >
-          Zum Tab „Nachfüllen“ →
+          Zum Nachfüllen →
         </Link>
       )}
 
