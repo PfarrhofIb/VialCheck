@@ -1,6 +1,11 @@
 import { useRef, useState } from 'react'
 import { exportBackup, importBackup, parseBackupFile } from '../db/backup'
-import { saveBackupFile } from '../utils/backupFile'
+import {
+  BACKUP_FILE_EXTENSION,
+  canShareBackupFile,
+  downloadBackupFile,
+  shareBackupFile,
+} from '../utils/backupFile'
 import { useStore } from '../hooks/useStore'
 import BottomSheet from './BottomSheet'
 
@@ -15,19 +20,30 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+  const shareAvailable = canShareBackupFile()
 
-  async function handleExport() {
+  async function handleExport(mode: 'download' | 'share') {
     setExporting(true)
     setMessage(null)
     try {
       const backup = await exportBackup()
-      await saveBackupFile(backup)
+      if (mode === 'share') {
+        await shareBackupFile(backup)
+      } else {
+        await downloadBackupFile(backup)
+      }
       setMessage({
         type: 'ok',
         text: `Backup erstellt (${backup.medications.length} Medikamente).`,
       })
-    } catch {
-      setMessage({ type: 'err', text: 'Export fehlgeschlagen.' })
+    } catch (err) {
+      const text =
+        err instanceof Error && err.message
+          ? err.message
+          : mode === 'share'
+            ? 'Teilen fehlgeschlagen.'
+            : 'Speichern fehlgeschlagen.'
+      setMessage({ type: 'err', text })
     } finally {
       setExporting(false)
     }
@@ -75,8 +91,8 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
   return (
     <BottomSheet open={open} onClose={onClose} title="Datensicherung" footer={footer}>
       <p className="text-sm text-gray-500 mb-4">
-        Sichere alle Medikamente, Chargen, Nachfüllliste und Fotos als JSON-Datei.
-        Die Datei kann z.B. in Google Drive gespeichert werden.
+        Sichere alle Medikamente, Chargen, Nachfüllliste und Fotos als VialCheck-Backup
+        ({BACKUP_FILE_EXTENSION}). Ältere Backups mit Endung .json können weiter importiert werden.
       </p>
 
       {message && (
@@ -94,7 +110,7 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
       <div className="space-y-3">
         <button
           type="button"
-          onClick={handleExport}
+          onClick={() => handleExport('download')}
           disabled={exporting || importing}
           className="w-full flex items-center justify-center gap-2 bg-brand-navy hover:bg-brand-navy-dark disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors"
         >
@@ -102,8 +118,23 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          {exporting ? 'Export läuft…' : 'Backup exportieren'}
+          {exporting ? 'Export läuft…' : 'Auf Gerät speichern'}
         </button>
+
+        {shareAvailable && (
+          <button
+            type="button"
+            onClick={() => handleExport('share')}
+            disabled={exporting || importing}
+            className="w-full flex items-center justify-center gap-2 border border-brand-navy text-brand-navy hover:bg-brand-navy-50 disabled:opacity-50 font-semibold py-3 rounded-xl transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            {exporting ? 'Export läuft…' : 'Teilen…'}
+          </button>
+        )}
 
         <button
           type="button"
@@ -120,7 +151,7 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
         <input
           ref={fileRef}
           type="file"
-          accept=".json,application/json"
+          accept={`.vialcheck,.json,${BACKUP_FILE_EXTENSION},application/json,application/vnd.vialcheck+backup`}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0]
@@ -130,7 +161,9 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
       </div>
 
       <p className="text-xs text-gray-400 mt-4">
-        Beim Export auf dem Handy: „Teilen“ → Google Drive oder Dateien-App wählen.
+        {shareAvailable
+          ? 'Speichern: Download-Ordner oder Speicherort wählen. Teilen: App deiner Wahl (Drive, E-Mail, Dateien …).'
+          : 'Die Datei wird in den Download-Ordner gespeichert. Von dort kannst du sie z. B. in die Dateien-App verschieben.'}
       </p>
     </BottomSheet>
   )

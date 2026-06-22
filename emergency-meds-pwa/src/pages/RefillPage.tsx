@@ -148,6 +148,9 @@ function splitRefillItems(items: RefillItemWithName[], orderedRefillIds: Set<num
   return { pending, ordered }
 }
 
+const REFILL_ACTION_BTN =
+  'w-[8.75rem] py-2.5 text-sm font-medium rounded-xl transition-colors text-center leading-tight'
+
 function RefillActionButtons({
   ordered,
   onOrder,
@@ -167,7 +170,7 @@ function RefillActionButtons({
         <button
           type="button"
           onClick={onUnorder}
-          className="text-xs text-brand-navy font-medium px-2 py-1 rounded-lg hover:bg-brand-navy-50"
+          className={`${REFILL_ACTION_BTN} border border-brand-navy text-brand-navy hover:bg-brand-navy-50 text-xs`}
         >
           Bestellt zurücknehmen
         </button>
@@ -175,7 +178,7 @@ function RefillActionButtons({
         <button
           type="button"
           onClick={onOrder}
-          className="border border-brand-navy text-brand-navy hover:bg-brand-navy-50 text-sm font-medium px-3 py-2 rounded-xl transition-colors"
+          className={`${REFILL_ACTION_BTN} border border-brand-navy text-brand-navy hover:bg-brand-navy-50`}
         >
           Bestellt
         </button>
@@ -183,7 +186,7 @@ function RefillActionButtons({
       <button
         type="button"
         onClick={onDone}
-        className="bg-brand-navy hover:bg-brand-navy-dark text-white text-sm font-medium px-3 py-2 rounded-xl transition-colors"
+        className={`${REFILL_ACTION_BTN} bg-brand-navy hover:bg-brand-navy-dark text-white`}
       >
         {doneLabel}
       </button>
@@ -212,11 +215,6 @@ function VerbrauchtCard({
     >
       <div className="flex items-center justify-between gap-2">
         <div>
-          {ordered && (
-            <span className="inline-block text-xs font-semibold text-brand-navy bg-brand-navy-50 px-2 py-0.5 rounded-full mb-1">
-              Bestellt
-            </span>
-          )}
           <p className="font-semibold text-gray-900">{item.medication_name}</p>
           {item.medication_secondary && (
             <p className="text-xs text-gray-500">{item.medication_secondary}</p>
@@ -349,11 +347,6 @@ function ExpiryCard({
     <div className={`rounded-2xl border shadow-sm p-4 ${baseStyle}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          {ordered && (
-            <span className="inline-block text-xs font-semibold text-brand-navy bg-brand-navy-50 px-2 py-0.5 rounded-full mb-1">
-              Bestellt
-            </span>
-          )}
           <MedicationNameDisplay
             med={medication}
             primaryClassName={`font-semibold ${
