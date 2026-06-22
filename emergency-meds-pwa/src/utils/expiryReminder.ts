@@ -80,11 +80,11 @@ export async function showExpirySystemNotification(
     const reg = await navigator.serviceWorker.ready
     await reg.showNotification(title, {
       body,
-      icon: '/icons/icon-192.svg',
-      badge: '/icons/icon-192.svg',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
       tag: reminderStorageKey(),
     })
   } catch {
-    new Notification(title, { body, icon: '/icons/icon-192.svg', tag: reminderStorageKey() })
+    new Notification(title, { body, icon: '/icons/icon-192.png', tag: reminderStorageKey() })
   }
 }

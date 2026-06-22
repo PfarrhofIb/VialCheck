@@ -108,6 +108,22 @@ Redirect: `vialcheck-eta.vercel.app` → `vialcheck.app` (307).
 
 Keine Server-Env-Variablen. Daten bleiben lokal in IndexedDB.
 
+## Logo & App-Icon
+
+| Datei | Zweck |
+|-------|--------|
+| `../Bilder/VialCheck Logo groß.png` | Master (1024×1024) — hier neues Logo ablegen |
+| `public/favicon.png` | Browser-Tab (32 px) |
+| `public/icons/icon-192.png` | PWA-Manifest, Benachrichtigungen |
+| `public/icons/icon-512.png` | PWA-Manifest (inkl. maskable) |
+| `public/icons/apple-touch-icon.png` | iOS / Safari Homescreen (180 px) |
+
+Konfiguration: `vite.config.ts`, `index.html`. Nach Icon-Änderung `npm run build`, PNGs committen und auf `main` pushen → Vercel deployt nach ~1–2 Min.
+
+**Prüfen:** https://vialcheck.app/icons/icon-192.png (Ampulle mit Häkchen, nicht rotes Kreuz).
+
+**PWA auf dem Handy:** Alte App deinstallieren, Speicher der Website löschen, neu installieren — sonst bleibt oft das alte Homescreen-Icon.
+
 ## Testen
 
 | Umgebung | Nutzung |

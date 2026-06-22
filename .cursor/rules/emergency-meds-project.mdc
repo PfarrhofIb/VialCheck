@@ -115,6 +115,39 @@ git push origin main
 # → Vercel deployt automatisch; nach ~1–2 Min. live auf vialcheck.app
 ```
 
+### Logo & App-Icon (PWA)
+
+| Was | Pfad / Hinweis |
+|-----|----------------|
+| **Master (Quelldatei)** | `Bilder/VialCheck Logo groß.png` — 1024×1024 PNG, Ampulle mit grünem Inhalt und weißem Häkchen auf weißem Hintergrund |
+| **Generierte Icons** | `emergency-meds-pwa/public/favicon.png` (32), `public/icons/icon-192.png`, `icon-512.png`, `apple-touch-icon.png` (180) |
+| **Manifest / HTML** | `vite.config.ts` (icons mit `purpose: any` + `maskable`), `index.html` (`favicon`, `apple-touch-icon`) |
+| **Benachrichtigungen** | `src/utils/expiryReminder.ts` → `/icons/icon-192.png` |
+| **Altes Icon** | Rotes Kreuz-SVG entfernt (`favicon.svg`, `icons/icon-192.svg`, `icon-512.svg`) |
+
+**Icons neu erzeugen** (nach Austausch der Master-PNG in `Bilder/`):
+
+```powershell
+# PowerShell: aus 1024×1024 Master die public/-Größen skalieren (System.Drawing)
+# Oder: Master ersetzen und Agent/Cursor bitten, Icons neu zu generieren + build
+cd emergency-meds-pwa
+.\npm_run.bat run build
+git add public/favicon.png public/icons/
+git commit -m "Update VialCheck icons"
+git push origin main
+```
+
+**Wichtig für Produktion:** Die PNG-Dateien unter `public/` müssen **in Git committed** sein — Vercel deployt nur das Repo. Fehlen sie, zeigt `vialcheck.app` weiter das alte Icon (oder Fallback).
+
+**Homescreen-Icon auf dem Handy wechselt nicht?**
+
+1. Prüfen: https://vialcheck.app/icons/icon-192.png — muss die Ampulle zeigen
+2. PWA **deinstallieren** (langes Drücken → App entfernen)
+3. Chrome → Website-Einstellungen → **Speicher löschen**
+4. Seite neu laden → **App installieren** (Android cached Icons hartnäckig)
+
+**Lokal (Dev):** `.\serve_pwa.bat` beendet alten http-server auf Port 8080 und startet mit frischem `dist/`.
+
 ### Coding-Konventionen (PWA)
 
 - Struktur: types → db/queries → hooks → pages/components
