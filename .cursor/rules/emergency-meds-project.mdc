@@ -5,10 +5,10 @@ alwaysApply: true
 
 # VialCheck – Projektkontext
 
-Offline-First App (**VialCheck**) zur Verwaltung von Notfallmedikamenten mit Barcode/DataMatrix-Scanner. UI-Sprache: **Deutsch**.
+Offline-First App (**VialCheck**) zur Verwaltung von Notfallmedikamenten. UI-Sprache: **Deutsch**.
 
 **Aktiver Fokus:** PWA in `emergency-meds-pwa/` (React/TypeScript).  
-**Parallel:** Flutter/Android-App im Repo-Root (älter, weniger Features).
+**Parallel:** Flutter/Android-App im Repo-Root (Legacy, nicht mehr aktiv genutzt).
 
 ---
 
@@ -17,47 +17,76 @@ Offline-First App (**VialCheck**) zur Verwaltung von Notfallmedikamenten mit Bar
 ### Tech-Stack
 
 - **React 19** + **TypeScript** + **Vite 8**, **Tailwind CSS v4**
+- **Design:** Clinical Trust — Navy `#1B3A5C`, Grün `#2ECC71` (`src/index.css` `@theme`)
 - **State:** Zustand → `useStore` (`src/hooks/useStore.ts`)
 - **DB:** Dexie.js → IndexedDB `emergency-meds`
 - **PWA:** vite-plugin-pwa (Service Worker, offline-first)
-- **Scanner:** @zxing/browser; **OCR:** Tesseract.js; **GS1:** `src/utils/barcode.ts`
+- **OCR:** Tesseract.js (Ampullen-Foto beim Hinzufügen/Bearbeiten)
 - **Datum:** Ablauf als `yyyy-MM` in DB, `MM.yyyy` in UI
+
+### Navigation
+
+| Position | Inhalt |
+|----------|--------|
+| Links | **Bestand** (`/`) |
+| Mitte | VialCheck-Logo (nicht klickbar) |
+| Rechts | **Nachfüllen** (`/nachfullen`) mit Badge |
+
+`/scanner` leitet auf `/` um (alte Lesezeichen). **Kein Scanner-Tab mehr.**
 
 ### Projektstruktur
 
 ```
 emergency-meds-pwa/src/
-├── App.tsx                    # Tab-Bar, Badge, ExpiryReminderModal
+├── App.tsx                    # Tab-Bar (3 Spalten), Badge, ExpiryReminderModal
+├── index.css                  # Brand-Farben (Clinical Trust)
 ├── db/schema.ts, queries.ts, backup.ts
+├── data/medicationCatalog.ts  # 25 Notfallmedikamente (Vorschläge)
 ├── hooks/useStore.ts, useExpiryReminder.ts
-├── pages/InventoryPage, ScannerPage, RefillPage
+├── pages/InventoryPage.tsx, RefillPage.tsx
 ├── components/                # Sheets, Modals, MedicationCard, BackupSheet, …
-└── utils/expiry.ts, expiryReminder.ts, medicationDisplay.ts, quantityInput.ts, …
+└── utils/
+    ├── expiry.ts, expiryReminder.ts, medicationDisplay.ts
+    ├── medicationSuggestions.ts  # Autocomplete-Suche
+    ├── quantityInput.ts, backupFile.ts, ocr.ts
 ```
 
-### Datenbank (IndexedDB v2)
+### Datenbank (IndexedDB v3)
 
-- **medications:** id, barcode (UNIQUE), handelsname, wirkstoffname, display_name, photo_blob_id, ml_per_ampule, mg_per_ml
-- **medication_batches:** id, medication_id, expiry_date (yyyy-MM), quantity
-- **refill_list:** id, medication_id, amount_needed
-- **photos:** id, blob
-- v1→v2 Migration: `name` → handelsname/wirkstoffname/display_name
+| Tabelle | Inhalt |
+|---------|--------|
+| **medications** | id, barcode (unique), handelsname, wirkstoffname, display_name, photo_blob_id, ml_per_ampule, mg_per_ml |
+| **medication_batches** | id, medication_id, expiry_date (yyyy-MM), quantity |
+| **refill_list** | id, medication_id, amount_needed |
+| **photos** | id, blob |
+| **order_markers** | id, target_type (batch/refill), target_id, medication_id, ordered_at — „Bestellt“-Status |
 
-### Kernlogik (implementiert)
+Migrationen: v1→v2 (`name` → handelsname/wirkstoffname), v2→v3 (`order_markers`).
 
-| Tab | Verhalten |
-|-----|-----------|
-| **Bestand** | Alphabetisch; Chargen pro MHD; rot/gelb/grün; Verbrauch mit Charge; Edit; Backup JSON |
-| **Scanner** | Kamera/Galerie/Test; GS1+OCR; Neuanlage; Merge nur bei gleichem Handelsnamen |
-| **Nachfüllen** | Verbraucht + **Ablauf** (oben abgelaufen, darunter bald ablaufend ≤3 Mon.) |
+### Kernlogik
+
+| Bereich | Verhalten |
+|---------|-----------|
+| **Bestand** | Alphabetisch; Chargen pro MHD; rot/gelb/grün; Verbrauch mit Charge; Bearbeiten; Backup |
+| **Medikament hinzufügen** | Manuell oder Ampullen-Foto (Kamera/Galerie + OCR); Autocomplete aus Katalog + lokalem Bestand |
+| **Nachfüllen** | Eine scrollbare Liste in Reihenfolge: **Verbraucht** → **Abgelaufen** → **Bald ablaufend** (≤3 Mon.) → **Bestellt** (alle Typen zusammen) |
+| **Bestellt** | Markierung vor Lieferung; nach Lieferung „Aufgefüllt“ / „Ersetzt“ zum Einsortieren |
 
 Weitere Details:
 
-- MHD-Farben: abgelaufen rot, ≤3 Monate gelb (`isExpiringSoon`), sonst grün
-- Mengen-Schnellauswahl: **1-2-3-5** (`QUICK_QUANTITY_OPTIONS` in `quantityInput.ts`)
+- MHD-Farben: abgelaufen rot, ≤3 Monate gelb, sonst grün
+- Mengen-Schnellauswahl: **1-2-3-5** (`QUICK_QUANTITY_OPTIONS`)
 - Handels-/Wirkstoffname mit wählbarer Überschrift; mg/Ampulle = ml × mg/ml
+- **Medikamenten-Vorschläge:** eingebauter Katalog (25 Einträge) + lokaler Bestand; ab 2 Zeichen
 - Monatsübersicht am letzten Tag des Monats (Modal + optionale Notification beim App-Start)
 - Tab-Badge Nachfüllen: verbraucht + abgelaufen + bald ablaufend
+
+### Backup
+
+- Export als **`.vialcheck`** (JSON-Inhalt, app-spezifische Endung)
+- Zwei Wege: **Auf Gerät speichern** (Download/Speicherort-Dialog) oder **Teilen…** (Drive, E-Mail, Dateien-App)
+- Import akzeptiert `.vialcheck` und ältere `.json`-Backups
+- Enthält: medications, batches, refill_list, photos, order_markers
 
 ### Dev-Setup PWA (Windows, User afri8)
 
@@ -72,128 +101,49 @@ URL: `https://laptop-onifsvh7.tailfd525a.ts.net` (nur wenn PC läuft; Produktion
 
 ### Hosting & Deployment (Stand: Juni 2026)
 
-Einrichtung abgeschlossen — GitHub + Vercel + eigene Domain.
-
 | Was | Wert |
 |-----|------|
-| **GitHub** | https://github.com/PfarrhofIb/VialCheck (Public; gesamtes Repo: PWA + Flutter) |
-| **Git-Remote** | `origin` → `https://github.com/PfarrhofIb/VialCheck.git`, Branch `main` |
-| **Produktion (primär)** | https://vialcheck.app |
-| **Vercel-Subdomain** | https://vialcheck-eta.vercel.app → 307-Redirect auf `vialcheck.app` |
-| **Vercel Root Directory** | `emergency-meds-pwa` |
-| **Build** | `npm run build` → Output `dist/` |
-| **Env-Variablen** | keine (reine Client-App) |
-| **Auto-Deploy** | Push auf `main` → Vercel baut neu |
+| **GitHub** | https://github.com/PfarrhofIb/VialCheck (Public) |
+| **Produktion** | https://vialcheck.app |
+| **Vercel** | Root Directory `emergency-meds-pwa`, Build `npm run build` → `dist/` |
+| **Auto-Deploy** | Push auf `main` |
 
-**Domain & DNS (uniteddomains):**
+**DNS (uniteddomains):** A `@` + A `*` → `216.198.79.1` (Vercel)
 
-- Domain **vialcheck.app** bei uniteddomains (kein Webspace nötig)
-- DNS unter **DNS-Einträge → A (IPv4 Adressen)**:
-  - Subdomain leer (`@`): **A** → `216.198.79.1` (Vercel-Empfehlung 2026)
-  - Subdomain `*`: **A** → `216.198.79.1` (Wildcard)
-- Alte uniteddomains-Standard-IP `89.31.143.90` wurde entfernt/ersetzt
-- Legacy-Vercel-IP `76.76.21.21` funktionierte ebenfalls; bei Vercel-Hinweis „DNS Change Recommended“ auf `216.198.79.1` umstellen
-- SSL/HTTPS: automatisch durch Vercel (Let’s Encrypt)
+**SPA-Routing:** `emergency-meds-pwa/vercel.json` — Rewrites für `/`, `/nachfullen`
 
-**Vercel-Konfiguration im Repo:**
+**Daten:** IndexedDB pro Gerät; nichts auf Server. Backup manuell.
 
-- `emergency-meds-pwa/vercel.json` — SPA-Rewrites für React Router (`/`, `/scanner`, `/nachfullen`)
-- Ohne diese Datei: direkter Aufruf von Unterrouten liefert 404
+### Logo & App-Icon
 
-**Daten & Privatsphäre:**
+| Was | Pfad |
+|-----|------|
+| Master | `Bilder/VialCheck Logo groß.png` (1024×1024) |
+| Icons | `public/favicon.png`, `public/icons/icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, `apple-touch-icon.png` |
+| theme-color | `#1B3A5C` (Navy) |
 
-- Medikamentendaten in **IndexedDB** pro Gerät/Browser — nichts auf GitHub/Vercel
-- Backup weiterhin manuell als JSON in der App
-- Vercel-URL und `vialcheck.app` sind öffentlich erreichbar (kein Passwortschutz)
-
-**Workflow nach Code-Änderungen:**
-
-```powershell
-git add .
-git commit -m "…"
-git push origin main
-# → Vercel deployt automatisch; nach ~1–2 Min. live auf vialcheck.app
-```
-
-### Logo & App-Icon (PWA)
-
-| Was | Pfad / Hinweis |
-|-----|----------------|
-| **Master (Quelldatei)** | `Bilder/VialCheck Logo groß.png` — 1024×1024 PNG, Ampulle mit grünem Inhalt und weißem Häkchen auf weißem Hintergrund |
-| **Generierte Icons** | `emergency-meds-pwa/public/favicon.png` (32), `public/icons/icon-192.png`, `icon-512.png`, `apple-touch-icon.png` (180) |
-| **Manifest / HTML** | `vite.config.ts` (icons mit `purpose: any` + `maskable`), `index.html` (`favicon`, `apple-touch-icon`) |
-| **Benachrichtigungen** | `src/utils/expiryReminder.ts` → `/icons/icon-192.png` |
-| **Altes Icon** | Rotes Kreuz-SVG entfernt (`favicon.svg`, `icons/icon-192.svg`, `icon-512.svg`) |
-
-**Icons neu erzeugen** (nach Austausch der Master-PNG in `Bilder/`):
-
-```powershell
-# PowerShell: aus 1024×1024 Master die public/-Größen skalieren (System.Drawing)
-# Oder: Master ersetzen und Agent/Cursor bitten, Icons neu zu generieren + build
-cd emergency-meds-pwa
-.\npm_run.bat run build
-git add public/favicon.png public/icons/
-git commit -m "Update VialCheck icons"
-git push origin main
-```
-
-**Wichtig für Produktion:** Die PNG-Dateien unter `public/` müssen **in Git committed** sein — Vercel deployt nur das Repo. Fehlen sie, zeigt `vialcheck.app` weiter das alte Icon (oder Fallback).
-
-**Homescreen-Icon auf dem Handy wechselt nicht?**
-
-1. Prüfen: https://vialcheck.app/icons/icon-192.png — muss die Ampulle zeigen
-2. PWA **deinstallieren** (langes Drücken → App entfernen)
-3. Chrome → Website-Einstellungen → **Speicher löschen**
-4. Seite neu laden → **App installieren** (Android cached Icons hartnäckig)
-
-**Lokal (Dev):** `.\serve_pwa.bat` beendet alten http-server auf Port 8080 und startet mit frischem `dist/`.
+PNG-Dateien müssen in Git committed sein — Vercel deployt nur aus GitHub.
 
 ### Coding-Konventionen (PWA)
 
 - Struktur: types → db/queries → hooks → pages/components
-- Zustand beibehalten (kein Redux o.ä.)
-- Minimale Diffs; deutsche UI-Texte
-- Kommentare nur bei nicht-offensichtlicher Logik
-
-### Bekannte Hinweise (PWA)
-
-- PWA-Install: Produktion über https://vialcheck.app; lokal localhost oder Tailscale
-- Kein zuverlässiger Hintergrund-Push ohne Server
-- Backup manuell; IndexedDB gerätespezifisch
+- Zustand beibehalten; minimale Diffs; deutsche UI-Texte
 
 ### Noch offen (PWA)
 
 - Hintergrund-Push / Sync zwischen Geräten
 - Tests
+- `@zxing/browser` in package.json (ungenutzt seit Scanner-Entfernung) — optional entfernen
 
 ---
 
 ## Flutter-App (Repo-Root) — Legacy
 
-Offline-First **Android-App** (Flutter/Dart), Material 3, Rot-Akzente.
-
-### Tech-Stack
-
-- **Flutter** ≥ 3.3, **provider** → `MedicationProvider`
-- **DB:** sqflite → `DatabaseHelper.instance`
-- **Scanner:** mobile_scanner
-
-### Build
+Offline-First **Android-App** (Flutter/Dart). Nicht mehr aktiv entwickelt.
 
 ```powershell
 cd C:\Users\afri8\Documents\emergency_meds
 .\flutter_run.bat run
-.\flutter_run.bat build apk
 ```
 
-| Tool | Pfad |
-|------|------|
-| Flutter SDK 3.44.2 | `D:\Programme\Flutter\flutter` |
-| Android SDK | `C:\Users\afri8\AppData\Local\Android\Sdk` |
-| JAVA_HOME | `C:\Program Files\Android\Android Studio1\jbr` |
-
-`flutter_run.bat` setzt `JAVA_HOME` und `ANDROID_HOME` automatisch.
-
-### Flutter vs. PWA
-
-Flutter hat einfacheres Schema (medications ohne Chargen-Modell v2, kein Backup/OCR/GS1 in gleichem Umfang). Neue Features primär in der PWA umsetzen.
+Neue Features primär in der PWA umsetzen.

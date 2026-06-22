@@ -1,6 +1,6 @@
 # VialCheck – PWA
 
-Offline-First Progressive Web App (**VialCheck**) zur Verwaltung von Notfallmedikamenten mit Barcode/DataMatrix-Scanner. UI-Sprache: **Deutsch**.
+Offline-First Progressive Web App (**VialCheck**) zur Verwaltung von Notfallmedikamenten. UI-Sprache: **Deutsch**.
 
 **Stand:** Juni 2026
 
@@ -9,46 +9,52 @@ Offline-First Progressive Web App (**VialCheck**) zur Verwaltung von Notfallmedi
 | Bereich | Technologie |
 |---------|-------------|
 | UI | React 19 + TypeScript + Vite 8 |
-| Styling | Tailwind CSS v4 |
+| Styling | Tailwind CSS v4, **Clinical Trust** (Navy `#1B3A5C`, Grün `#2ECC71`) |
 | State | Zustand (`useStore`) |
-| DB | Dexie.js → IndexedDB (`emergency-meds`) |
+| DB | Dexie.js → IndexedDB (`emergency-meds`, **v3**) |
 | Routing | React Router v7 |
 | PWA | vite-plugin-pwa (Service Worker, Offline) |
-| Scanner | @zxing/browser (Kamera + Test-Modus) |
-| OCR | Tesseract.js |
-| GS1 | Parser in `src/utils/barcode.ts` (AI 01 GTIN, AI 17 MHD) |
+| OCR | Tesseract.js (Ampullen-Foto beim Hinzufügen/Bearbeiten) |
+
+## Navigation
+
+| Position | Route | Inhalt |
+|----------|-------|--------|
+| Links | `/` | **Bestand** |
+| Mitte | — | VialCheck-Logo (dekorativ) |
+| Rechts | `/nachfullen` | **Nachfüllen** (mit Badge) |
+
+Kein Scanner-Tab. `/scanner` leitet auf `/` um.
 
 ## Projektstruktur
 
 ```
 src/
 ├── main.tsx, App.tsx          # Router, Tab-Bar, Monats-Erinnerung
+├── index.css                  # Brand-Farben (@theme)
+├── data/medicationCatalog.ts  # 25 Notfallmedikamente (Vorschlagskatalog)
 ├── db/
-│   ├── schema.ts              # Dexie v1→v2 Migration
-│   ├── queries.ts             # CRUD, Ablauf-Queries
-│   └── backup.ts              # JSON Export/Import
+│   ├── schema.ts              # Dexie v1→v2→v3
+│   ├── queries.ts             # CRUD, Ablauf, Bestellt-Marker
+│   └── backup.ts              # Export/Import inkl. order_markers
 ├── hooks/
-│   ├── useStore.ts            # Zentraler App-State
-│   └── useExpiryReminder.ts   # Monatsende-Modal
-├── types/                     # Medication, Batch, Refill, Backup
+│   ├── useStore.ts
+│   └── useExpiryReminder.ts
+├── types/
 ├── utils/
-│   ├── expiry.ts              # MHD-Logik, Farben
-│   ├── expiryReminder.ts      # Monatsübersicht + Notifications
-│   ├── medicationDisplay.ts   # Handels-/Wirkstoffname, mg/Ampulle
-│   ├── quantityInput.ts       # Mengenfeld, Schnellauswahl 1-2-3-5
-│   ├── barcode.ts             # GS1-Parser
-│   └── ocr.ts
+│   ├── expiry.ts, expiryReminder.ts, medicationDisplay.ts
+│   ├── medicationSuggestions.ts  # Autocomplete
+│   ├── quantityInput.ts, backupFile.ts, ocr.ts
 ├── pages/
-│   ├── InventoryPage.tsx      # Tab Bestand
-│   ├── ScannerPage.tsx        # Tab Scanner
-│   └── RefillPage.tsx         # Tab Nachfüllen
+│   ├── InventoryPage.tsx      # Bestand
+│   └── RefillPage.tsx         # Nachfüllen
 └── components/
     ├── MedicationCard, AddMedicationSheet, AddBatchSheet
     ├── ConsumeSheet, EditMedicationModal, BackupSheet
-    ├── ExpiryReminderModal, MonthPicker, BottomSheet, …
+    ├── MedicationNameFields, ExpiryReminderModal, …
 ```
 
-## Datenbank (IndexedDB v2)
+## Datenbank (IndexedDB v3)
 
 | Tabelle | Felder (Auszug) |
 |---------|-----------------|
@@ -56,27 +62,49 @@ src/
 | **medication_batches** | id, medication_id, expiry_date (yyyy-MM), quantity |
 | **refill_list** | id, medication_id, amount_needed |
 | **photos** | id, blob |
+| **order_markers** | target_type (batch/refill), target_id, medication_id, ordered_at |
 
-**Migration v1→v2:** Legacy-Feld `name` → `handelsname` / `wirkstoffname` / `display_name`.
+**Migrationen:** v1→v2 (Legacy `name` → Handels-/Wirkstoffname), v2→v3 (`order_markers` für „Bestellt“).
 
 ## Kernlogik
 
-| Tab | Verhalten |
-|-----|-----------|
-| **Bestand** | Alphabetische Liste nach Primärname; Chargen pro MHD; Farben: abgelaufen rot, ≤3 Monate gelb, sonst grün; Verbrauch mit Charge-Auswahl; Bearbeiten; Backup Export/Import |
-| **Scanner** | Kamera / Galerie / Test-Modus; GS1 + OCR; bekannt → Charge hinzufügen; unbekannt → Neuanlage (Zusammenführung nur bei gleichem Handelsnamen) |
-| **Nachfüllen** | Untertab **Verbraucht** (refill_list) und **Ablauf**: zuerst **Abgelaufen**, darunter **Bald ablaufend** (≤3 Monate); jeweils „Ersetzt“-Dialog; Badge zählt beide + Verbraucht |
+### Bestand
+
+- Alphabetische Liste nach Primärname; Chargen pro MHD
+- Farben: abgelaufen rot, ≤3 Monate gelb, sonst grün
+- Verbrauch mit Charge-Auswahl; Bearbeiten; Datensicherung
+
+### Medikament hinzufügen / bearbeiten
+
+- Handelsname + Wirkstoffname mit wählbarer Überschrift
+- **Autocomplete** ab 2 Zeichen (Katalog + lokaler Bestand) → füllt Namen und Konzentration
+- Ampullen-Foto per Kamera/Galerie mit OCR (Tesseract)
+- Schnellauswahl Menge: **1 · 2 · 3 · 5**
+
+### Nachfüllen
+
+Eine scrollbare Liste (keine Untertabs), Reihenfolge:
+
+1. **Verbraucht** — aus refill_list
+2. **Abgelaufen**
+3. **Bald ablaufend** (≤3 Monate)
+4. **Bestellt** — alle Typen zusammen, bereit zum Einsortieren
+
+Aktionen pro Eintrag: **Bestellt** → nach Lieferung **Aufgefüllt** / **Ersetzt**.
 
 ### MHD & Erinnerungen
 
-- Ablaufmonat als `yyyy-MM` in DB, Anzeige `MM.yyyy`
-- **Monatsübersicht:** Am letzten Tag des Monats beim App-Start Modal + optional System-Benachrichtigung (nur wenn App geöffnet wird; kein Hintergrund-Push ohne Server)
-- Schnellauswahl Menge beim Hinzufügen: **1 · 2 · 3 · 5**
+- Ablaufmonat `yyyy-MM` in DB, Anzeige `MM.yyyy`
+- **Monatsübersicht:** letzter Tag des Monats — Modal + optionale System-Benachrichtigung (nur bei geöffneter App)
 
-### Namen & Anzeige
+### Backup
 
-- Handelsname + Wirkstoffname, wählbare Überschrift (`display_name`)
-- mg/Ampulle berechnet: `ml_per_ampule × mg_per_ml`
+| | |
+|---|---|
+| **Dateiendung** | `.vialcheck` (JSON-Inhalt) |
+| **Export** | „Auf Gerät speichern“ oder „Teilen…“ |
+| **Import** | `.vialcheck` und ältere `.json` |
+| **Inhalt** | Medikamente, Chargen, Nachfüllliste, Fotos, Bestellt-Marker |
 
 ## Entwicklung
 
@@ -87,10 +115,10 @@ cd emergency-meds-pwa
 .\npm_run.bat run preview
 ```
 
-Aus dem Repo-Root:
+Aus dem Repo-Root (Dev am Handy via Tailscale):
 
 ```powershell
-.\serve_pwa.bat           # Build + http-server + Tailscale Serve (nur Dev)
+.\serve_pwa.bat
 ```
 
 ## Produktion (Vercel + Domain)
@@ -98,13 +126,10 @@ Aus dem Repo-Root:
 | | |
 |---|---|
 | **Live-URL** | https://vialcheck.app |
-| **Vercel** | Projekt *VialCheck*, Root Directory `emergency-meds-pwa` |
+| **Vercel** | Root Directory `emergency-meds-pwa` |
 | **GitHub** | https://github.com/PfarrhofIb/VialCheck — Push auf `main` → Auto-Deploy |
-| **Domain** | `vialcheck.app` bei uniteddomains |
-| **DNS** | A `@` + A `*` → `216.198.79.1` (Vercel) |
-| **SPA-Routing** | `vercel.json` im PWA-Ordner |
-
-Redirect: `vialcheck-eta.vercel.app` → `vialcheck.app` (307).
+| **DNS** | A `@` + A `*` → `216.198.79.1` |
+| **SPA-Routing** | `vercel.json` |
 
 Keine Server-Env-Variablen. Daten bleiben lokal in IndexedDB.
 
@@ -112,17 +137,18 @@ Keine Server-Env-Variablen. Daten bleiben lokal in IndexedDB.
 
 | Datei | Zweck |
 |-------|--------|
-| `../Bilder/VialCheck Logo groß.png` | Master (1024×1024) — hier neues Logo ablegen |
-| `public/favicon.png` | Browser-Tab (32 px) |
-| `public/icons/icon-192.png` | PWA-Manifest, Benachrichtigungen |
-| `public/icons/icon-512.png` | PWA-Manifest (inkl. maskable) |
-| `public/icons/apple-touch-icon.png` | iOS / Safari Homescreen (180 px) |
+| `../Bilder/VialCheck Logo groß.png` | Master (1024×1024) |
+| `public/favicon.png` | Browser-Tab |
+| `public/icons/icon-192.png` | PWA, Benachrichtigungen |
+| `public/icons/icon-512.png` | PWA-Manifest |
+| `public/icons/icon-512-maskable.png` | Maskable (Android Install) |
+| `public/icons/apple-touch-icon.png` | iOS Homescreen |
 
-Konfiguration: `vite.config.ts`, `index.html`. Nach Icon-Änderung `npm run build`, PNGs committen und auf `main` pushen → Vercel deployt nach ~1–2 Min.
+`theme-color`: `#1B3A5C`. Nach Icon-Änderung: build, PNGs committen, pushen.
 
-**Prüfen:** https://vialcheck.app/icons/icon-192.png (Ampulle mit Häkchen, nicht rotes Kreuz).
+**Prüfen:** https://vialcheck.app/icons/icon-192.png
 
-**PWA auf dem Handy:** Alte App deinstallieren, Speicher der Website löschen, neu installieren — sonst bleibt oft das alte Homescreen-Icon.
+**PWA auf dem Handy:** Alte App deinstallieren, Speicher löschen, neu installieren.
 
 ## Testen
 
@@ -130,9 +156,9 @@ Konfiguration: `vite.config.ts`, `index.html`. Nach Icon-Änderung `npm run buil
 |----------|---------|
 | Chrome (localhost) | Primäre Entwicklung |
 | DevTools `Ctrl+Shift+M` | Mobile-Ansicht |
-| DevTools → Network → Offline | Offline-Modus |
-| Chrome → „App installieren" | PWA-Installation (HTTPS nötig) |
-| Scanner am PC | Tab Scanner → „Test-Modus" → Barcode manuell |
+| DevTools → Offline | Offline-Modus |
+| Chrome → „App installieren" | PWA (HTTPS nötig) |
+| https://vialcheck.app | Produktion |
 
 ## Handy-Zugriff (Produktion)
 
@@ -141,52 +167,26 @@ Konfiguration: `vite.config.ts`, `index.html`. Nach Icon-Änderung `npm run buil
 
 ## Handy-Zugriff via Tailscale Serve (Dev)
 
-Alternative für lokale Entwicklung — feste HTTPS-URL im Tailnet, PC muss laufen.
-
-### Einmalig: Tailscale Serve aktivieren
-
-1. Im Browser öffnen (am PC, eingeloggt bei Tailscale):
-   ```
-   https://login.tailscale.com/f/serve?node=nLjZMcJeDW11CNTRL
-   ```
-2. Serve für den Tailnet aktivieren bestätigen.
-
-### Server starten
-
 ```powershell
 cd C:\Users\afri8\Documents\emergency_meds
 .\serve_pwa.bat
 ```
 
-Oder manuell im PWA-Ordner:
-
-```powershell
-.\npm_run.bat run build
-npx http-server dist -p 8080 -a 127.0.0.1 -c-1 -P http://127.0.0.1:8080/index.html
-tailscale serve --bg --yes http://127.0.0.1:8080
-```
-
-### Auf dem Handy
-
-1. **Tailscale-App** installieren und mit demselben Konto anmelden
-2. Im Chrome öffnen: `https://laptop-onifsvh7.tailfd525a.ts.net`
-3. Menü → **App installieren**
-
-Funktioniert im WLAN und unterwegs (PC muss laufen, Tailscale aktiv).
+1. Tailscale-App auf dem Handy
+2. Chrome → `https://laptop-onifsvh7.tailfd525a.ts.net`
+3. **App installieren**
 
 ## Bekannte Hinweise
 
-- Daten liegen lokal in IndexedDB; Backup manuell als JSON (Google Drive etc.)
-- Nach Code-Änderungen: neu bauen + App auf dem Handy neu laden
-- PWA-Installation: Produktion über **vialcheck.app**; Dev über Tailscale oder localhost
-- Monats-Benachrichtigung: kein zuverlässiger Hintergrund-Push ohne Server
+- Daten lokal in IndexedDB; Backup manuell als `.vialcheck`
+- Monats-Benachrichtigung: kein Hintergrund-Push ohne Server
+- Medikamenten-Katalog fest eingebaut (`src/data/medicationCatalog.ts`) — bei Bedarf erweitern und deployen
 
-## Noch offen / Ideen
+## Noch offen
 
-- Automatische Hintergrund-Erinnerung (Push-Server oder native App)
+- Hintergrund-Push / Sync zwischen Geräten
 - Automatisierte Tests
-- Sync zwischen Geräten
 
 ## Paralleles Flutter-Projekt
 
-Im übergeordneten Ordner `emergency_meds/` liegt eine ältere **Flutter/Android-App** (sqflite, provider). Aktive Entwicklung erfolgt in dieser **PWA**.
+Im übergeordneten Ordner liegt eine ältere **Flutter/Android-App** (Legacy). Aktive Entwicklung in dieser **PWA**.
