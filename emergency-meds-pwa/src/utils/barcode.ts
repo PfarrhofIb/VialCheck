@@ -24,3 +24,23 @@ export function parseGS1(raw: string): { gtin?: string; expiryDate?: string } {
 
   return result
 }
+
+/** Mögliche Barcode-Schlüssel für DB-Lookup (Rohwert + GTIN-Varianten). */
+export function barcodeLookupKeys(raw: string): string[] {
+  const keys = new Set<string>()
+  const trimmed = raw.trim()
+  if (trimmed) keys.add(trimmed)
+  const { gtin } = parseGS1(raw)
+  if (gtin) {
+    keys.add(gtin)
+    const stripped = gtin.replace(/^0+/, '')
+    if (stripped) keys.add(stripped)
+  }
+  return [...keys]
+}
+
+/** Bevorzugter Barcode zum Speichern (GTIN falls aus GS1 erkennbar). */
+export function preferredBarcode(raw: string): string {
+  const { gtin } = parseGS1(raw)
+  return gtin ?? raw.trim()
+}

@@ -1,5 +1,6 @@
 import { db } from './schema'
 import type { Medication, MedicationBatch, MedicationWithBatches, RefillItemWithName, OrderMarker } from '../types'
+import { barcodeLookupKeys } from '../utils/barcode'
 import { currentYearMonth, isExpiringSoon } from '../utils/expiry'
 import { getPrimaryName, getSecondaryName } from '../utils/medicationDisplay'
 import { v4 as uuidv4 } from 'uuid'
@@ -15,6 +16,14 @@ export async function getMedicationByBarcode(barcode: string): Promise<Medicatio
   const med = await db.medications.where('barcode').equals(barcode).first()
   if (!med) return null
   return enrichWithBatches(med)
+}
+
+export async function findMedicationByScan(raw: string): Promise<MedicationWithBatches | null> {
+  for (const key of barcodeLookupKeys(raw)) {
+    const med = await getMedicationByBarcode(key)
+    if (med) return med
+  }
+  return null
 }
 
 /**

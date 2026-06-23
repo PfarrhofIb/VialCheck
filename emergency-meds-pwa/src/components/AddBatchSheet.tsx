@@ -10,10 +10,16 @@ import { normalizeQuantityInput, parseQuantityInput, QUICK_QUANTITY_OPTIONS } fr
 interface AddBatchSheetProps {
   med: MedicationWithBatches | null
   initialExpiry?: string
+  initialQty?: number
   onClose: () => void
 }
 
-export default function AddBatchSheet({ med, initialExpiry = '', onClose }: AddBatchSheetProps) {
+export default function AddBatchSheet({
+  med,
+  initialExpiry = '',
+  initialQty = 1,
+  onClose,
+}: AddBatchSheetProps) {
   const refresh = useStore((s) => s.refresh)
   const [expiry, setExpiry] = useState('')
   const [qtyInput, setQtyInput] = useState('1')
@@ -22,9 +28,9 @@ export default function AddBatchSheet({ med, initialExpiry = '', onClose }: AddB
   useEffect(() => {
     if (!med) return
     setExpiry(initialExpiry)
-    setQtyInput('1')
+    setQtyInput(String(initialQty))
     setLoading(false)
-  }, [med?.id, initialExpiry])
+  }, [med?.id, initialExpiry, initialQty])
 
   if (!med) return null
 

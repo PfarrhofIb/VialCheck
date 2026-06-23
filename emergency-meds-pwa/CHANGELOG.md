@@ -4,6 +4,14 @@ Format: neueste Einträge oben. Version = `APP_VERSION` in `src/constants/appInf
 
 ---
 
+## 2026-06-17 — Med-Foto, Barcode-Scanner (v0.62)
+
+- **Ampullen-Foto beim Anlegen:** Foto wird mit OCR erfasst und beim ersten Speichern in IndexedDB abgelegt (wie Material/Bearbeiten).
+- **Barcode/DataMatrix-Scanner** auf dem Medikamente-Tab (`@zxing/browser`): GS1-AI 17 (MHD) wird erkannt; bekanntes Medikament → Schnell-Charge (+1/+5/+10/+20), unbekannt → Neuanlage mit Barcode.
+- **`materialCatalog.draft.ts` entfernt** — nur noch `materialCatalog.draft.md` als Referenz.
+
+---
+
 ## 2026-06-17 — Material, Katalog & UX (v0.56 → v0.60)
 
 ### Übersicht
@@ -132,7 +140,7 @@ Nach Abgleich mit Herstellerdaten (Ambu AuraGain, i-gel/Intersurgical, ISO Venfl
 |-------|--------|
 | Medikamenten-Katalog aus Ampullarium | Zurückgestellt (Dosierungen zuerst bereinigen) |
 | Bestehende DB-Einträge mit alten Katalognamen | Keine Auto-Migration — manuell anpassen |
-| `materialCatalog.draft.ts` | Veraltet gegenüber `materialCatalog.ts` — nur `.md` als Referenz pflegen |
+| `materialCatalog.draft.md` | Review-Referenz (kein `.ts`-Entwurf mehr) |
 
 ---
 

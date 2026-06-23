@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useStore } from '../hooks/useStore'
 import type { MedicationWithBatches } from '../types'
 import MedicationCard from '../components/MedicationCard'
@@ -7,15 +7,28 @@ import AddBatchSheet from '../components/AddBatchSheet'
 import EditMedicationModal from '../components/EditMedicationModal'
 import AddMedicationSheet from '../components/AddMedicationSheet'
 import BackupSheet from '../components/BackupSheet'
+import BarcodeScannerSheet from '../components/BarcodeScannerSheet'
+import ScannedMedicationSheet from '../components/ScannedMedicationSheet'
+import { findMedicationByScan } from '../db/queries'
+import { parseGS1, preferredBarcode } from '../utils/barcode'
 import { getPrimaryName, medicationMatchesSearch } from '../utils/medicationDisplay'
 
 export default function InventoryPage() {
   const { medications, loading, refresh } = useStore()
   const [consumeMed, setConsumeMed] = useState<MedicationWithBatches | null>(null)
   const [addBatchMed, setAddBatchMed] = useState<MedicationWithBatches | null>(null)
+  const [addBatchExpiry, setAddBatchExpiry] = useState('')
+  const [addBatchQty, setAddBatchQty] = useState(1)
   const [editMed, setEditMed] = useState<MedicationWithBatches | null>(null)
-  const [showAdd, setShowAdd] = useState(false)
+  const [addSheet, setAddSheet] = useState<{
+    open: boolean
+    barcode?: string
+    expiry?: string
+  }>({ open: false })
   const [showBackup, setShowBackup] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scannedMed, setScannedMed] = useState<MedicationWithBatches | null>(null)
+  const [scannedExpiry, setScannedExpiry] = useState<string | undefined>()
   const [search, setSearch] = useState('')
 
   const filtered = medications
@@ -24,6 +37,33 @@ export default function InventoryPage() {
       getPrimaryName(a).localeCompare(getPrimaryName(b), 'de', { sensitivity: 'base' }),
     )
 
+  const handleScan = useCallback(async (raw: string) => {
+    setShowScanner(false)
+    const parsed = parseGS1(raw)
+    const med = await findMedicationByScan(raw)
+    if (med) {
+      setScannedExpiry(parsed.expiryDate)
+      setScannedMed(med)
+    } else {
+      setAddSheet({
+        open: true,
+        barcode: preferredBarcode(raw),
+        expiry: parsed.expiryDate,
+      })
+    }
+  }, [])
+
+  function openAddBatch(
+    med: MedicationWithBatches,
+    expiry?: string,
+    qty = 1,
+  ) {
+    setScannedMed(null)
+    setAddBatchMed(med)
+    setAddBatchExpiry(expiry ?? '')
+    setAddBatchQty(qty)
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -31,6 +71,16 @@ export default function InventoryPage() {
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-bold text-gray-900">Medikamente</h1>
           <div className="flex items-center gap-1 mr-10">
+            <button
+              onClick={() => setShowScanner(true)}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
+              aria-label="Barcode scannen"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h2m10 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+            </button>
             <button
               onClick={() => setShowBackup(true)}
               className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
@@ -83,14 +133,14 @@ export default function InventoryPage() {
             med={med}
             onConsume={setConsumeMed}
             onEdit={setEditMed}
-            onAddBatch={setAddBatchMed}
+            onAddBatch={(m) => openAddBatch(m)}
           />
         ))}
       </div>
 
       {/* FAB */}
       <button
-        onClick={() => setShowAdd(true)}
+        onClick={() => setAddSheet({ open: true })}
         className="fixed right-4 bottom-20 w-14 h-14 bg-brand-navy hover:bg-brand-navy-dark text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-40"
         aria-label="Medikament hinzufügen"
         style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
@@ -100,10 +150,38 @@ export default function InventoryPage() {
 
       {/* Sheets & Modals */}
       <ConsumeSheet med={consumeMed} onClose={() => setConsumeMed(null)} />
-      <AddBatchSheet med={addBatchMed} onClose={() => setAddBatchMed(null)} />
+      <AddBatchSheet
+        med={addBatchMed}
+        initialExpiry={addBatchExpiry}
+        initialQty={addBatchQty}
+        onClose={() => {
+          setAddBatchMed(null)
+          setAddBatchExpiry('')
+          setAddBatchQty(1)
+        }}
+      />
       <EditMedicationModal med={editMed} onClose={() => setEditMed(null)} />
-      <AddMedicationSheet open={showAdd} onClose={() => setShowAdd(false)} />
+      <AddMedicationSheet
+        open={addSheet.open}
+        initialBarcode={addSheet.barcode}
+        initialExpiry={addSheet.expiry ?? ''}
+        onClose={() => setAddSheet({ open: false })}
+      />
       <BackupSheet open={showBackup} onClose={() => setShowBackup(false)} />
+      <BarcodeScannerSheet
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={handleScan}
+      />
+      <ScannedMedicationSheet
+        med={scannedMed}
+        scannedExpiry={scannedExpiry}
+        onClose={() => {
+          setScannedMed(null)
+          setScannedExpiry(undefined)
+        }}
+        onOpenAddBatch={openAddBatch}
+      />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { addMedication, findExistingMedication, addOrUpdateBatch, updateMedication } from '../db/queries'
+import { addMedication, findExistingMedication, addOrUpdateBatch, updateMedication, savePhoto } from '../db/queries'
 import { useStore } from '../hooks/useStore'
 import BottomSheet from './BottomSheet'
 import MonthPicker from './MonthPicker'
@@ -40,6 +40,8 @@ export default function AddMedicationSheet({
   const [mlPerAmpule, setMlPerAmpule] = useState('')
   const [mgPerMl, setMgPerMl] = useState('')
   const [storageLocation, setStorageLocation] = useState('')
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [snack, setSnack] = useState('')
@@ -59,10 +61,20 @@ export default function AddMedicationSheet({
     setSnack('')
     setLoading(false)
     setOcrLoading(false)
+    setPhotoFile(null)
+    setPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
     setBarcode(initialBarcode || `manual_${uuidv4()}`)
   }, [open, initialName, initialExpiry, initialBarcode])
 
-  async function handlePhotoOcr(file: File) {
+  async function handlePhotoSelect(file: File) {
+    setPhotoFile(file)
+    setPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return URL.createObjectURL(file)
+    })
     setOcrLoading(true)
     try {
       const result = await runOcr(file)
@@ -72,10 +84,20 @@ export default function AddMedicationSheet({
       if (result.mgPerMl) setMgPerMl(result.mgPerMl.toString())
       if (!result.name && !result.expiryDate) {
         setSnack('Kein Text erkannt. Bitte Daten manuell eingeben.')
+      } else {
+        setSnack('')
       }
     } finally {
       setOcrLoading(false)
     }
+  }
+
+  function clearPhoto() {
+    setPhotoFile(null)
+    setPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
   }
 
   const canSave = hasAnyName(handelsname, wirkstoffname) && !!expiry
@@ -91,11 +113,15 @@ export default function AddMedicationSheet({
     setLoading(true)
     try {
       const location = await persistStorageLocation(storageLocation)
+      const photo_blob_id = photoFile ? await savePhoto(photoFile) : undefined
       const existing = await findExistingMedication(handelsname, wirkstoffname)
       let medId: number
       if (existing) {
         medId = existing.id!
-        await updateMedication(medId, { storage_location: location })
+        await updateMedication(medId, {
+          storage_location: location,
+          ...(photo_blob_id ? { photo_blob_id } : {}),
+        })
       } else {
         medId = await addMedication({
           barcode: initialBarcode || barcode,
@@ -103,6 +129,7 @@ export default function AddMedicationSheet({
           wirkstoffname: wirkstoffname.trim(),
           display_name: displayName,
           ...(location ? { storage_location: location } : {}),
+          ...(photo_blob_id ? { photo_blob_id } : {}),
           ml_per_ampule: mlPerAmpule ? parseFloat(mlPerAmpule) : undefined,
           mg_per_ml: mgPerMl ? parseFloat(mgPerMl) : undefined,
         })
@@ -144,65 +171,6 @@ export default function AddMedicationSheet({
         </div>
       )}
       <form id="add-med-form" onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            disabled={ocrLoading}
-            className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 rounded-xl py-3 text-sm text-gray-600 hover:border-brand-navy hover:text-brand-navy transition-colors"
-          >
-            {ocrLoading ? (
-              <span className="animate-pulse text-xs">OCR läuft…</span>
-            ) : (
-              <>
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="font-medium">Foto aufnehmen</span>
-                <span className="text-xs text-gray-400">Kamera + OCR</span>
-              </>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => galleryRef.current?.click()}
-            disabled={ocrLoading}
-            className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 rounded-xl py-3 text-sm text-gray-600 hover:border-brand-navy hover:text-brand-navy transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="font-medium">Aus Galerie</span>
-            <span className="text-xs text-gray-400">Bild + OCR</span>
-          </button>
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) handlePhotoOcr(f)
-            e.target.value = ''
-          }}
-        />
-        <input
-          ref={galleryRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) handlePhotoOcr(f)
-            e.target.value = ''
-          }}
-        />
-
         <MedicationNameFields
           handelsname={handelsname}
           wirkstoffname={wirkstoffname}
@@ -265,6 +233,64 @@ export default function AddMedicationSheet({
               placeholder="10"
             />
           </div>
+        </div>
+
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-2">Ampullen-Foto</p>
+          {photoPreview ? (
+            <div className="relative w-24 h-24">
+              <img src={photoPreview} alt="Ampulle" className="w-24 h-24 object-cover rounded-xl" />
+              <button
+                type="button"
+                onClick={clearPhoto}
+                className="absolute -top-1 -right-1 bg-brand-navy text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={ocrLoading}
+                className="flex-1 flex items-center justify-center gap-2 text-sm text-brand-navy border border-brand-navy/30 rounded-xl px-3 py-2 hover:bg-brand-navy-50"
+              >
+                {ocrLoading ? 'OCR läuft…' : 'Foto aufnehmen'}
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryRef.current?.click()}
+                disabled={ocrLoading}
+                className="flex-1 flex items-center justify-center gap-2 text-sm text-gray-600 border border-gray-300 rounded-xl px-3 py-2 hover:bg-gray-50"
+              >
+                Galerie
+              </button>
+            </div>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) handlePhotoSelect(f)
+              e.target.value = ''
+            }}
+          />
+          <input
+            ref={galleryRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) handlePhotoSelect(f)
+              e.target.value = ''
+            }}
+          />
         </div>
       </form>
     </BottomSheet>

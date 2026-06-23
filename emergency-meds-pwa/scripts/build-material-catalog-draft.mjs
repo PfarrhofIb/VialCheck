@@ -1,6 +1,4 @@
 import XLSX from 'xlsx'
-import fs from 'fs'
-
 const data = XLSX.utils.sheet_to_json(
   XLSX.readFile('p:/Cursor/BilderUpload/Notfallrucksack Inventar Haltbarkeit.xlsx').Sheets.Tabelle1,
   { header: 1, defval: '' },
@@ -79,35 +77,8 @@ const entries = [...map.values()].sort((a, b) => {
   return mo[a.mode] - mo[b.mode] || a.catalogName.localeCompare(b.catalogName, 'de')
 })
 
-const lines = [
-  '/**',
-  ' * ENTWURF – Material-Katalog aus „Notfallrucksack Inventar Haltbarkeit.xlsx“',
-  ' * Nur zur Review. Nicht eingebunden. Keine Medikamente (Ampullarium ausgeschlossen).',
-  ` * Generiert: ${new Date().toISOString().slice(0, 10)}`,
-  ' */',
-  "import type { MaterialMode, VariantPreset } from '../types/material'",
-  '',
-  'export interface MaterialCatalogEntry {',
-  '  name: string',
-  '  mode: MaterialMode',
-  '  variant_preset?: VariantPreset',
-  '  /** Typische Einsortier-Orte aus der Excel-Liste */',
-  '  storage_hints?: string[]',
-  '}',
-  '',
-  'export const MATERIAL_CATALOG_DRAFT: MaterialCatalogEntry[] = [',
-]
-
-for (const e of entries) {
-  const parts = [`name: '${e.catalogName.replace(/'/g, "\\'")}'`, `mode: '${e.mode}'`]
-  if (e.variant_preset) parts.push(`variant_preset: '${e.variant_preset}'`)
-  lines.push(`  { ${parts.join(', ')} },`)
-}
-lines.push(']', '')
-
-const outPath = new URL('../src/data/materialCatalog.draft.ts', import.meta.url)
-fs.writeFileSync(outPath, lines.join('\n'))
-
 const counts = { variant: 0, simple: 0, no_expiry: 0 }
 for (const e of entries) counts[e.mode]++
+console.log('Material-Katalog-Entwurf (nur Review, siehe materialCatalog.draft.md):')
 console.log('Entries:', entries.length, counts)
+console.log('Produktiv: src/data/materialCatalog.ts')
