@@ -3,16 +3,20 @@ import { Link } from 'react-router-dom'
 import Modal from './Modal'
 import MedicationNameDisplay from './MedicationNameDisplay'
 import { formatYearMonth, nextYearMonth } from '../utils/expiry'
+import { formatLotLabel } from '../utils/materialDisplay'
 import type { ExpiryGroup } from '../utils/expiryReminder'
+import type { MaterialExpiryGroup } from '../db/materialQueries'
 
 interface ExpiryReminderModalProps {
   open: boolean
   onClose: () => void
   expired: ExpiryGroup[]
   expiringNextMonth: ExpiryGroup[]
+  expiredMaterials: MaterialExpiryGroup[]
+  expiringNextMonthMaterials: MaterialExpiryGroup[]
 }
 
-function GroupList({ groups, emptyText }: { groups: ExpiryGroup[]; emptyText: string }) {
+function MedGroupList({ groups, emptyText }: { groups: ExpiryGroup[]; emptyText: string }) {
   if (!groups.length) {
     return <p className="text-sm text-gray-500 py-1">{emptyText}</p>
   }
@@ -34,11 +38,41 @@ function GroupList({ groups, emptyText }: { groups: ExpiryGroup[]; emptyText: st
   )
 }
 
+function MaterialGroupList({
+  groups,
+  emptyText,
+}: {
+  groups: MaterialExpiryGroup[]
+  emptyText: string
+}) {
+  if (!groups.length) {
+    return <p className="text-sm text-gray-500 py-1">{emptyText}</p>
+  }
+  return (
+    <ul className="space-y-2">
+      {groups.map(({ material, lots }) => {
+        const total = lots.reduce((s, l) => s + l.quantity, 0)
+        return (
+          <li key={material.id} className="rounded-xl bg-gray-50 px-3 py-2">
+            <p className="font-medium text-gray-900">{material.name}</p>
+            <p className="text-sm text-gray-600 mt-0.5">
+              {total} Stück ·{' '}
+              {lots.map((l) => formatLotLabel(l)).join(', ')}
+            </p>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 export default function ExpiryReminderModal({
   open,
   onClose,
   expired,
   expiringNextMonth,
+  expiredMaterials,
+  expiringNextMonthMaterials,
 }: ExpiryReminderModalProps) {
   const [notifState, setNotifState] = useState<'idle' | 'requesting' | 'granted' | 'denied'>('idle')
   const canNotify = typeof window !== 'undefined' && 'Notification' in window
@@ -52,7 +86,11 @@ export default function ExpiryReminderModal({
   }
 
   const nextLabel = formatYearMonth(nextYearMonth())
-  const hasIssues = expired.length > 0 || expiringNextMonth.length > 0
+  const hasIssues =
+    expired.length > 0 ||
+    expiringNextMonth.length > 0 ||
+    expiredMaterials.length > 0 ||
+    expiringNextMonthMaterials.length > 0
 
   return (
     <Modal open={open} onClose={onClose} title="Monatsübersicht MHD">
@@ -61,19 +99,35 @@ export default function ExpiryReminderModal({
       </p>
 
       <section className="mb-4">
-        <h3 className="text-sm font-semibold text-red-600 mb-2">Abgelaufen</h3>
-        <GroupList groups={expired} emptyText="Keine abgelaufenen Medikamente im Bestand." />
+        <h3 className="text-sm font-semibold text-red-600 mb-2">Abgelaufen · Medikamente</h3>
+        <MedGroupList groups={expired} emptyText="Keine abgelaufenen Medikamente im Bestand." />
       </section>
+
+      {expiredMaterials.length > 0 && (
+        <section className="mb-4">
+          <h3 className="text-sm font-semibold text-red-600 mb-2">Abgelaufen · Material</h3>
+          <MaterialGroupList groups={expiredMaterials} emptyText="" />
+        </section>
+      )}
 
       <section className="mb-4">
         <h3 className="text-sm font-semibold text-yellow-600 mb-2">
-          Läuft im {nextLabel} ab
+          Läuft im {nextLabel} ab · Medikamente
         </h3>
-        <GroupList
+        <MedGroupList
           groups={expiringNextMonth}
           emptyText={`Nichts läuft im ${nextLabel} ab.`}
         />
       </section>
+
+      {expiringNextMonthMaterials.length > 0 && (
+        <section className="mb-4">
+          <h3 className="text-sm font-semibold text-yellow-600 mb-2">
+            Läuft im {nextLabel} ab · Material
+          </h3>
+          <MaterialGroupList groups={expiringNextMonthMaterials} emptyText="" />
+        </section>
+      )}
 
       {hasIssues && (
         <Link

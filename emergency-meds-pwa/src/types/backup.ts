@@ -1,6 +1,12 @@
 import type { Medication, MedicationBatch, RefillItem, OrderMarker } from './index'
+import type {
+  Material,
+  MaterialLot,
+  MaterialRefillItem,
+  MaterialOrderMarker,
+} from './material'
 
-export const BACKUP_VERSION = 1
+export const BACKUP_VERSION = 2
 
 export interface BackupPhoto {
   id: string
@@ -16,4 +22,8 @@ export interface BackupFile {
   refill_list: RefillItem[]
   photos: BackupPhoto[]
   order_markers?: OrderMarker[]
+  materials?: Material[]
+  material_lots?: MaterialLot[]
+  material_refill_list?: MaterialRefillItem[]
+  material_order_markers?: MaterialOrderMarker[]
 }

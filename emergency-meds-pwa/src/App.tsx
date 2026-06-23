@@ -5,11 +5,25 @@ import { useExpiryReminder } from './hooks/useExpiryReminder'
 import ExpiryReminderModal from './components/ExpiryReminderModal'
 import AboutModal from './components/AboutModal'
 import InventoryPage from './pages/InventoryPage'
+import MaterialsPage from './pages/MaterialsPage'
 import RefillPage from './pages/RefillPage'
 
 function TabBar() {
-  const { refillItems, expiredGroups, expiringSoonGroups } = useStore()
-  const badgeCount = refillItems.length + expiredGroups.length + expiringSoonGroups.length
+  const {
+    refillItems,
+    materialRefillItems,
+    expiredGroups,
+    expiringSoonGroups,
+    expiredMaterialGroups,
+    expiringSoonMaterialGroups,
+  } = useStore()
+  const badgeCount =
+    refillItems.length +
+    materialRefillItems.length +
+    expiredGroups.length +
+    expiringSoonGroups.length +
+    expiredMaterialGroups.length +
+    expiringSoonMaterialGroups.length
   const [showAbout, setShowAbout] = useState(false)
 
   const tabClass = ({ isActive }: { isActive: boolean }) =>
@@ -20,7 +34,7 @@ function TabBar() {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 grid grid-cols-3 z-40"
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 grid grid-cols-4 z-40"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <NavLink to="/" end className={tabClass}>
@@ -31,13 +45,21 @@ function TabBar() {
           Bestand
         </NavLink>
 
+        <NavLink to="/material" className={tabClass}>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          Material
+        </NavLink>
+
         <button
           type="button"
           onClick={() => setShowAbout(true)}
           className="flex items-center justify-center py-1 active:opacity-70 transition-opacity"
           aria-label="Impressum"
         >
-          <img src="/icons/icon-192.png" alt="VialCheck" className="w-10 h-10 rounded-xl" />
+          <img src="/icons/icon-192.png" alt="VialCheck" className="w-9 h-9 rounded-xl" />
         </button>
 
         <NavLink to="/nachfullen" className={tabClass}>
@@ -70,6 +92,7 @@ function AppShell() {
     <div className="min-h-screen bg-gray-50" style={{ paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}>
       <Routes>
         <Route path="/" element={<InventoryPage />} />
+        <Route path="/material" element={<MaterialsPage />} />
         <Route path="/nachfullen" element={<RefillPage />} />
         <Route path="/scanner" element={<Navigate to="/" replace />} />
       </Routes>
@@ -79,6 +102,8 @@ function AppShell() {
         onClose={reminder.close}
         expired={reminder.expired}
         expiringNextMonth={reminder.expiringNextMonth}
+        expiredMaterials={reminder.expiredMaterials}
+        expiringNextMonthMaterials={reminder.expiringNextMonthMaterials}
       />
     </div>
   )

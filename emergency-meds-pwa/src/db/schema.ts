@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { Medication, MedicationBatch, RefillItem, Photo, OrderMarker } from '../types'
+import type { Material, MaterialLot, MaterialRefillItem, MaterialOrderMarker } from '../types/material'
 
 class EmergencyMedsDB extends Dexie {
   medications!: Table<Medication, number>
@@ -7,6 +8,10 @@ class EmergencyMedsDB extends Dexie {
   refill_list!: Table<RefillItem, number>
   photos!: Table<Photo, string>
   order_markers!: Table<OrderMarker, number>
+  materials!: Table<Material, number>
+  material_lots!: Table<MaterialLot, number>
+  material_refill_list!: Table<MaterialRefillItem, number>
+  material_order_markers!: Table<MaterialOrderMarker, number>
 
   constructor() {
     super('emergency-meds')
@@ -39,6 +44,26 @@ class EmergencyMedsDB extends Dexie {
       refill_list: '++id, medication_id',
       photos: 'id',
       order_markers: '++id, &[target_type+target_id], medication_id, target_type',
+    })
+    this.version(4).stores({
+      medications: '++id, &barcode, handelsname, wirkstoffname',
+      medication_batches: '++id, medication_id, [medication_id+expiry_date]',
+      refill_list: '++id, medication_id',
+      photos: 'id',
+      order_markers: '++id, &[target_type+target_id], medication_id, target_type',
+      materials: '++id, name, mode',
+      material_lots: '++id, material_id, expiry_date',
+    })
+    this.version(5).stores({
+      medications: '++id, &barcode, handelsname, wirkstoffname',
+      medication_batches: '++id, medication_id, [medication_id+expiry_date]',
+      refill_list: '++id, medication_id',
+      photos: 'id',
+      order_markers: '++id, &[target_type+target_id], medication_id, target_type',
+      materials: '++id, name, mode',
+      material_lots: '++id, material_id, expiry_date',
+      material_refill_list: '++id, material_id',
+      material_order_markers: '++id, &[target_type+target_id], material_id, target_type',
     })
   }
 }

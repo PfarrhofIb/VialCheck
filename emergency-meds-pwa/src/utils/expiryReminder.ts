@@ -1,4 +1,5 @@
 import type { Medication, MedicationBatch } from '../types'
+import type { MaterialExpiryGroup } from '../db/materialQueries'
 import { getPrimaryName } from './medicationDisplay'
 import { formatYearMonth, isLastDayOfMonth, nextYearMonth } from './expiry'
 
@@ -50,18 +51,22 @@ export function getExpiringNextMonthGroups(
 export function buildNotificationSummary(
   expired: ExpiryGroup[],
   expiringNextMonth: ExpiryGroup[],
+  expiredMaterials: MaterialExpiryGroup[] = [],
+  expiringNextMonthMaterials: MaterialExpiryGroup[] = [],
 ): { title: string; body: string } {
   const parts: string[] = []
-  if (expired.length) {
-    parts.push(`${expired.length} abgelaufen`)
+  const expiredCount = expired.length + expiredMaterials.length
+  const nextMonthCount = expiringNextMonth.length + expiringNextMonthMaterials.length
+  if (expiredCount) {
+    parts.push(`${expiredCount} abgelaufen`)
   }
-  if (expiringNextMonth.length) {
-    parts.push(`${expiringNextMonth.length} laufen ${formatYearMonth(nextYearMonth())} ab`)
+  if (nextMonthCount) {
+    parts.push(`${nextMonthCount} laufen ${formatYearMonth(nextYearMonth())} ab`)
   }
   if (!parts.length) {
     return {
       title: 'MHD-Monatsübersicht',
-      body: 'Keine abgelaufenen Medikamente, nichts läuft nächsten Monat ab.',
+      body: 'Keine abgelaufenen Einträge, nichts läuft nächsten Monat ab.',
     }
   }
   return {
@@ -73,9 +78,16 @@ export function buildNotificationSummary(
 export async function showExpirySystemNotification(
   expired: ExpiryGroup[],
   expiringNextMonth: ExpiryGroup[],
+  expiredMaterials: MaterialExpiryGroup[] = [],
+  expiringNextMonthMaterials: MaterialExpiryGroup[] = [],
 ): Promise<void> {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
-  const { title, body } = buildNotificationSummary(expired, expiringNextMonth)
+  const { title, body } = buildNotificationSummary(
+    expired,
+    expiringNextMonth,
+    expiredMaterials,
+    expiringNextMonthMaterials,
+  )
   try {
     const reg = await navigator.serviceWorker.ready
     await reg.showNotification(title, {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from './useStore'
+import { getExpiringNextMonthMaterialGroups } from '../db/materialQueries'
 import {
   getExpiringNextMonthGroups,
   markReminderShown,
@@ -8,24 +9,31 @@ import {
 } from '../utils/expiryReminder'
 
 export function useExpiryReminder() {
-  const { medications, expiredGroups, loading } = useStore()
+  const { medications, materials, expiredGroups, expiredMaterialGroups, loading } = useStore()
   const [open, setOpen] = useState(false)
+
+  const expiringNextMonth = getExpiringNextMonthGroups(medications)
+  const expiringNextMonthMaterials = getExpiringNextMonthMaterialGroups(materials)
 
   useEffect(() => {
     if (loading || !shouldShowMonthlyReminder()) return
 
-    const expiringNextMonth = getExpiringNextMonthGroups(medications)
     markReminderShown()
     setOpen(true)
-    void showExpirySystemNotification(expiredGroups, expiringNextMonth)
-  }, [loading, medications, expiredGroups])
-
-  const expiringNextMonth = getExpiringNextMonthGroups(medications)
+    void showExpirySystemNotification(
+      expiredGroups,
+      expiringNextMonth,
+      expiredMaterialGroups,
+      expiringNextMonthMaterials,
+    )
+  }, [loading, expiredGroups, expiredMaterialGroups, expiringNextMonth, expiringNextMonthMaterials])
 
   return {
     open,
     close: () => setOpen(false),
     expired: expiredGroups,
     expiringNextMonth,
+    expiredMaterials: expiredMaterialGroups,
+    expiringNextMonthMaterials,
   }
 }

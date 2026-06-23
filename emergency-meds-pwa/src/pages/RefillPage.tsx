@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { useStore, getOrderedBatchIds, getOrderedRefillIds, isBatchGroupOrdered } from '../hooks/useStore'
+import {
+  useStore,
+  getOrderedBatchIds,
+  getOrderedRefillIds,
+  getOrderedMaterialLotIds,
+  getOrderedMaterialRefillIds,
+  isBatchGroupOrdered,
+} from '../hooks/useStore'
 import type { RefillItemWithName, MedicationBatch } from '../types'
 import {
   removeRefillItem,
@@ -14,15 +21,31 @@ import { formatYearMonth, expiryColorClass } from '../utils/expiry'
 import Modal from '../components/Modal'
 import MonthPicker from '../components/MonthPicker'
 import MedicationNameDisplay from '../components/MedicationNameDisplay'
+import {
+  MaterialRefillVerbrauchtSection,
+  MaterialExpirySection,
+} from '../components/MaterialRefillSection'
 import type { Medication } from '../types'
 import { normalizeQuantityInput, parseQuantityInput } from '../utils/quantityInput'
 
 type ExpiryGroup = { medication: Medication; batches: MedicationBatch[] }
 
 export default function RefillPage() {
-  const { refillItems, expiredGroups, expiringSoonGroups, orderMarkers, refresh } = useStore()
+  const {
+    refillItems,
+    materialRefillItems,
+    expiredGroups,
+    expiringSoonGroups,
+    expiredMaterialGroups,
+    expiringSoonMaterialGroups,
+    orderMarkers,
+    materialOrderMarkers,
+    refresh,
+  } = useStore()
   const orderedBatchIds = getOrderedBatchIds(orderMarkers)
   const orderedRefillIds = getOrderedRefillIds(orderMarkers)
+  const orderedMaterialLotIds = getOrderedMaterialLotIds(materialOrderMarkers)
+  const orderedMaterialRefillIds = getOrderedMaterialRefillIds(materialOrderMarkers)
   const [refillDialog, setRefillDialog] = useState<RefillItemWithName | null>(null)
   const [expiredDialog, setExpiredDialog] = useState<{
     medication: Medication
@@ -34,10 +57,43 @@ export default function RefillPage() {
   const { pending: pendingExpired, ordered: orderedExpired } = splitExpiryGroups(expiredGroups, orderedBatchIds)
   const { pending: pendingSoon, ordered: orderedSoon } = splitExpiryGroups(expiringSoonGroups, orderedBatchIds)
 
+  const hasPendingMaterialRefill = materialRefillItems.some(
+    (i) => i.id == null || !orderedMaterialRefillIds.has(i.id),
+  )
+  const hasPendingMaterialExpired = expiredMaterialGroups.some((g) => {
+    const withId = g.lots.filter((l) => l.id != null)
+    return !(withId.length > 0 && withId.every((l) => orderedMaterialLotIds.has(l.id!)))
+  })
+  const hasPendingMaterialSoon = expiringSoonMaterialGroups.some((g) => {
+    const withId = g.lots.filter((l) => l.id != null)
+    return !(withId.length > 0 && withId.every((l) => orderedMaterialLotIds.has(l.id!)))
+  })
+  const hasOrderedMaterialRefill = materialRefillItems.some(
+    (i) => i.id != null && orderedMaterialRefillIds.has(i.id),
+  )
+  const hasOrderedMaterialExpired = expiredMaterialGroups.some((g) => {
+    const withId = g.lots.filter((l) => l.id != null)
+    return withId.length > 0 && withId.every((l) => orderedMaterialLotIds.has(l.id!))
+  })
+  const hasOrderedMaterialSoon = expiringSoonMaterialGroups.some((g) => {
+    const withId = g.lots.filter((l) => l.id != null)
+    return withId.length > 0 && withId.every((l) => orderedMaterialLotIds.has(l.id!))
+  })
+
   const hasItems =
-    refillItems.length > 0 || expiredGroups.length > 0 || expiringSoonGroups.length > 0
+    refillItems.length > 0 ||
+    materialRefillItems.length > 0 ||
+    expiredGroups.length > 0 ||
+    expiringSoonGroups.length > 0 ||
+    expiredMaterialGroups.length > 0 ||
+    expiringSoonMaterialGroups.length > 0
   const hasOrdered =
-    orderedRefill.length > 0 || orderedExpired.length > 0 || orderedSoon.length > 0
+    orderedRefill.length > 0 ||
+    orderedExpired.length > 0 ||
+    orderedSoon.length > 0 ||
+    hasOrderedMaterialRefill ||
+    hasOrderedMaterialExpired ||
+    hasOrderedMaterialSoon
 
   return (
     <div className="flex flex-col h-full">
@@ -50,7 +106,7 @@ export default function RefillPage() {
           <EmptyRefillState />
         ) : (
           <div className="space-y-8">
-            {pendingRefill.length > 0 && (
+            {(pendingRefill.length > 0 || hasPendingMaterialRefill) && (
               <section>
                 <h2 className="text-sm font-semibold text-gray-700 mb-3">Verbraucht</h2>
                 <div className="space-y-3">
@@ -71,10 +127,15 @@ export default function RefillPage() {
                     />
                   ))}
                 </div>
+                <MaterialRefillVerbrauchtSection
+                  items={materialRefillItems}
+                  orderedIds={orderedMaterialRefillIds}
+                  variant="pending"
+                />
               </section>
             )}
 
-            {pendingExpired.length > 0 && (
+            {(pendingExpired.length > 0 || hasPendingMaterialExpired) && (
               <section>
                 <h2 className="text-sm font-semibold text-red-600 mb-3">Abgelaufen</h2>
                 <div className="space-y-3">
@@ -102,10 +163,16 @@ export default function RefillPage() {
                     />
                   ))}
                 </div>
+                <MaterialExpirySection
+                  groups={expiredMaterialGroups}
+                  variant="expired"
+                  orderedLotIds={orderedMaterialLotIds}
+                  listVariant="pending"
+                />
               </section>
             )}
 
-            {pendingSoon.length > 0 && (
+            {(pendingSoon.length > 0 || hasPendingMaterialSoon) && (
               <section>
                 <h2 className="text-sm font-semibold text-yellow-600 mb-1">Bald ablaufend</h2>
                 <p className="text-xs text-gray-500 mb-3">Läuft in den nächsten 3 Monaten ab</p>
@@ -134,6 +201,12 @@ export default function RefillPage() {
                     />
                   ))}
                 </div>
+                <MaterialExpirySection
+                  groups={expiringSoonMaterialGroups}
+                  variant="soon"
+                  orderedLotIds={orderedMaterialLotIds}
+                  listVariant="pending"
+                />
               </section>
             )}
 
@@ -206,6 +279,23 @@ export default function RefillPage() {
                       }
                     />
                   ))}
+                  <MaterialRefillVerbrauchtSection
+                    items={materialRefillItems}
+                    orderedIds={orderedMaterialRefillIds}
+                    variant="ordered"
+                  />
+                  <MaterialExpirySection
+                    groups={expiredMaterialGroups}
+                    variant="expired"
+                    orderedLotIds={orderedMaterialLotIds}
+                    listVariant="ordered"
+                  />
+                  <MaterialExpirySection
+                    groups={expiringSoonMaterialGroups}
+                    variant="soon"
+                    orderedLotIds={orderedMaterialLotIds}
+                    listVariant="ordered"
+                  />
                 </div>
               </section>
             )}
@@ -258,7 +348,7 @@ function EmptyRefillState() {
           d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <p className="font-medium text-gray-500">Alles aufgefüllt</p>
-      <p className="text-sm mt-1">Verbrauchte und ablaufende Medikamente erscheinen hier</p>
+      <p className="text-sm mt-1">Verbrauchtes und ablaufendes Material erscheinen hier</p>
     </div>
   )
 }
