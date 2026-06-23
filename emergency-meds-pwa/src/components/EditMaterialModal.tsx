@@ -131,8 +131,51 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
 
         <StorageLocationField value={storageLocation} onChange={setStorageLocation} />
 
+        {material.lots.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-700">Bestand</p>
+            {material.lots.map((lot) => (
+              <div key={lot.id} className="rounded-xl border border-gray-200 p-3 space-y-2">
+                {isVariant && material.variant_preset && (
+                  <MaterialVariantPicker
+                    preset={material.variant_preset}
+                    value={lot.variant_label ?? ''}
+                    onChange={(v) => updateLotVariant(lot.id!, v)}
+                  />
+                )}
+                {needsExpiry && (
+                  <MonthPicker
+                    value={lot.expiry_date ?? ''}
+                    onChange={(v) => updateLotExpiry(lot.id!, v)}
+                    label="Ablaufmonat"
+                  />
+                )}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Menge</label>
+                  <input
+                    type="number"
+                    min={1}
+                    defaultValue={lot.quantity}
+                    onBlur={(e) => updateLotQty(lot.id!, e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                  />
+                </div>
+                {material.lots.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeLot(lot.id!)}
+                    className="text-xs text-red-600"
+                  >
+                    Eintrag entfernen
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">Foto</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">Material-Foto</p>
           {photoUrl ? (
             <div className="relative w-24 h-24">
               <img src={photoUrl} alt={material.name} className="w-24 h-24 object-cover rounded-xl" />
@@ -188,49 +231,6 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
             }}
           />
         </div>
-
-        {material.lots.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-700">Bestand</p>
-            {material.lots.map((lot) => (
-              <div key={lot.id} className="rounded-xl border border-gray-200 p-3 space-y-2">
-                {isVariant && material.variant_preset && (
-                  <MaterialVariantPicker
-                    preset={material.variant_preset}
-                    value={lot.variant_label ?? ''}
-                    onChange={(v) => updateLotVariant(lot.id!, v)}
-                  />
-                )}
-                {needsExpiry && (
-                  <MonthPicker
-                    value={lot.expiry_date ?? ''}
-                    onChange={(v) => updateLotExpiry(lot.id!, v)}
-                    label="Ablaufmonat"
-                  />
-                )}
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-600">Menge</label>
-                  <input
-                    type="number"
-                    min={1}
-                    defaultValue={lot.quantity}
-                    onBlur={(e) => updateLotQty(lot.id!, e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
-                  />
-                </div>
-                {material.lots.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeLot(lot.id!)}
-                    className="text-xs text-red-600"
-                  >
-                    Eintrag entfernen
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
 
         <div className="flex gap-3">
           <button type="button" onClick={onClose} className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700">

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { MaterialMode, VariantPreset } from '../types/material'
 import { addMaterialWithLot } from '../db/materialQueries'
+import { savePhoto } from '../db/queries'
 import { useStore } from '../hooks/useStore'
 import BottomSheet from './BottomSheet'
 import MonthPicker from './MonthPicker'
@@ -33,6 +34,10 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
   const [expiry, setExpiry] = useState('')
   const [qtyInput, setQtyInput] = useState('1')
   const [loading, setLoading] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const galleryRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -44,6 +49,8 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
     setExpiry('')
     setQtyInput('1')
     setLoading(false)
+    setPhotoPreview(null)
+    setPhotoFile(null)
   }, [open])
 
   useEffect(() => {
@@ -69,18 +76,36 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
     setVariantLabel('')
   }
 
+  function handlePhotoSelect(file: File) {
+    setPhotoFile(file)
+    setPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return URL.createObjectURL(file)
+    })
+  }
+
+  function clearPhoto() {
+    setPhotoFile(null)
+    setPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!canSave) return
     setLoading(true)
     try {
       const location = await persistStorageLocation(storageLocation)
+      const photo_blob_id = photoFile ? await savePhoto(photoFile) : undefined
       await addMaterialWithLot(
         {
           name: name.trim(),
           mode,
           variant_preset: mode === 'variant' ? variantPreset : undefined,
           ...(location ? { storage_location: location } : {}),
+          ...(photo_blob_id ? { photo_blob_id } : {}),
         },
         {
           expiry_date: needsExpiry && expiry ? expiry : undefined,
@@ -182,6 +207,17 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
         )}
 
         <QuantityField qtyInput={qtyInput} onQtyChange={setQtyInput} />
+
+        <MaterialPhotoField
+          photoPreview={photoPreview}
+          photoLoading={loading}
+          onCapture={() => fileRef.current?.click()}
+          onGallery={() => galleryRef.current?.click()}
+          onRemove={clearPhoto}
+          fileRef={fileRef}
+          galleryRef={galleryRef}
+          onFileSelect={handlePhotoSelect}
+        />
       </form>
     </BottomSheet>
   )
@@ -244,6 +280,86 @@ function QuantityField({
         onChange={(e) => onQtyChange(e.target.value)}
         onBlur={() => onQtyChange(normalizeQuantityInput(qtyInput))}
         className="mt-1 border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
+      />
+    </div>
+  )
+}
+
+function MaterialPhotoField({
+  photoPreview,
+  photoLoading,
+  onCapture,
+  onGallery,
+  onRemove,
+  fileRef,
+  galleryRef,
+  onFileSelect,
+}: {
+  photoPreview: string | null
+  photoLoading: boolean
+  onCapture: () => void
+  onGallery: () => void
+  onRemove: () => void
+  fileRef: React.RefObject<HTMLInputElement | null>
+  galleryRef: React.RefObject<HTMLInputElement | null>
+  onFileSelect: (file: File) => void
+}) {
+  return (
+    <div>
+      <p className="text-sm font-medium text-gray-700 mb-2">Material-Foto</p>
+      {photoPreview ? (
+        <div className="relative w-24 h-24">
+          <img src={photoPreview} alt="" className="w-24 h-24 object-cover rounded-xl" />
+          <button
+            type="button"
+            onClick={onRemove}
+            className="absolute -top-1 -right-1 bg-brand-navy text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+          >
+            ×
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCapture}
+            disabled={photoLoading}
+            className="flex-1 flex items-center justify-center gap-2 text-sm text-brand-navy border border-brand-navy/30 rounded-xl px-3 py-2 hover:bg-brand-navy-50"
+          >
+            Foto aufnehmen
+          </button>
+          <button
+            type="button"
+            onClick={onGallery}
+            disabled={photoLoading}
+            className="flex-1 flex items-center justify-center gap-2 text-sm text-gray-600 border border-gray-300 rounded-xl px-3 py-2 hover:bg-gray-50"
+          >
+            Galerie
+          </button>
+        </div>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) onFileSelect(f)
+          e.target.value = ''
+        }}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) onFileSelect(f)
+          e.target.value = ''
+        }}
       />
     </div>
   )
