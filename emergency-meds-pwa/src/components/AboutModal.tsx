@@ -21,7 +21,7 @@ export default function AboutModal({ open, onClose }: AboutModalProps) {
         </div>
 
         <p className="text-gray-600 leading-relaxed">
-          Offline-App zur Verwaltung von Notfallmedikamenten — Bestand, MHD und Nachfüllliste.
+          Offline-App zur Verwaltung von Notfallmedikamenten und Material — Bestand, MHD und Nachfüllliste.
         </p>
 
         <div>

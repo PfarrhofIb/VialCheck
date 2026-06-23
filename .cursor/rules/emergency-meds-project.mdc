@@ -5,10 +5,12 @@ alwaysApply: true
 
 # VialCheck – Projektkontext
 
-Offline-First App (**VialCheck**) zur Verwaltung von Notfallmedikamenten. UI-Sprache: **Deutsch**.
+Offline-First App (**VialCheck**) zur Verwaltung von **Notfallmedikamenten** und **Notfallmaterial**. UI-Sprache: **Deutsch**.
 
-**Aktiver Fokus:** PWA in `emergency-meds-pwa/` (React/TypeScript).  
-**Parallel:** Flutter/Android-App im Repo-Root (Legacy, nicht mehr aktiv genutzt).
+**Aktiver Fokus:** PWA in `emergency-meds-pwa/` (React/TypeScript), **v0.60**.  
+**Parallel:** Flutter/Android-App im Repo-Root (Legacy).
+
+**Changelog:** `emergency-meds-pwa/CHANGELOG.md` (detailliert ab 2026-06-17)
 
 ---
 
@@ -17,133 +19,93 @@ Offline-First App (**VialCheck**) zur Verwaltung von Notfallmedikamenten. UI-Spr
 ### Tech-Stack
 
 - **React 19** + **TypeScript** + **Vite 8**, **Tailwind CSS v4**
-- **Design:** Clinical Trust — Navy `#1B3A5C`, Grün `#2ECC71` (`src/index.css` `@theme`)
-- **State:** Zustand → `useStore` (`src/hooks/useStore.ts`)
-- **DB:** Dexie.js → IndexedDB `emergency-meds`
-- **PWA:** vite-plugin-pwa (Service Worker, offline-first)
-- **OCR:** Tesseract.js (Ampullen-Foto beim Hinzufügen/Bearbeiten)
-- **Datum:** Ablauf als `yyyy-MM` in DB, `MM.yyyy` in UI
+- **Design:** Clinical Trust — Navy `#1B3A5C`, Grün `#2ECC71`
+- **State:** Zustand → `useStore`
+- **DB:** Dexie.js → IndexedDB `emergency-meds` **v6**
+- **PWA:** vite-plugin-pwa · **OCR:** Tesseract.js
+- **Datum:** `yyyy-MM` in DB, `MM.yyyy` in UI
 
-### Navigation
+### Navigation (3 Tabs)
 
-| Position | Inhalt |
-|----------|--------|
-| Links | **Bestand** (`/`) |
-| Mitte | VialCheck-Logo (nicht klickbar) |
-| Rechts | **Nachfüllen** (`/nachfullen`) mit Badge |
+| Tab | Route |
+|-----|-------|
+| **Medikamente** | `/` |
+| **Material** | `/material` |
+| **Nachfüllen** | `/nachfullen` (Badge inkl. Material) |
 
-`/scanner` leitet auf `/` um (alte Lesezeichen). **Kein Scanner-Tab mehr.**
+Impressum: Logo-Button oben rechts. Kein Scanner-Tab.
 
-### Projektstruktur
+### Projektstruktur (Auszug)
 
 ```
 emergency-meds-pwa/src/
-├── App.tsx                    # Tab-Bar (3 Spalten), Badge, ExpiryReminderModal
-├── index.css                  # Brand-Farben (Clinical Trust)
-├── db/schema.ts, queries.ts, backup.ts
-├── data/medicationCatalog.ts  # 25 Notfallmedikamente (Vorschläge)
-├── hooks/useStore.ts, useExpiryReminder.ts
-├── pages/InventoryPage.tsx, RefillPage.tsx
-├── components/                # Sheets, Modals, MedicationCard, BackupSheet, …
-└── utils/
-    ├── expiry.ts, expiryReminder.ts, medicationDisplay.ts
-    ├── medicationSuggestions.ts  # Autocomplete-Suche
-    ├── quantityInput.ts, backupFile.ts, ocr.ts
+├── data/medicationCatalog.ts    # 25 Medikamente
+├── data/materialCatalog.ts      # 71 Material (Notfallrucksack)
+├── db/schema.ts, queries.ts, materialQueries.ts, backup.ts
+├── pages/InventoryPage, MaterialsPage, RefillPage
+├── components/MaterialNameField, MaterialVariantPicker, StorageLocationField, …
+└── utils/materialVariants.ts, materialSuggestions.ts, …
 ```
 
-### Datenbank (IndexedDB v3)
+### Datenbank (IndexedDB v6)
 
 | Tabelle | Inhalt |
 |---------|--------|
-| **medications** | id, barcode (unique), handelsname, wirkstoffname, display_name, photo_blob_id, ml_per_ampule, mg_per_ml |
-| **medication_batches** | id, medication_id, expiry_date (yyyy-MM), quantity |
-| **refill_list** | id, medication_id, amount_needed |
-| **photos** | id, blob |
-| **order_markers** | id, target_type (batch/refill), target_id, medication_id, ordered_at — „Bestellt“-Status |
+| medications, medication_batches, refill_list, order_markers | Medikamente |
+| materials, material_lots, material_refill_list, material_order_markers | Material |
+| storage_locations | „Einsortiert in“ (Autocomplete) |
+| photos | Blobs für Med + Material |
 
-Migrationen: v1→v2 (`name` → handelsname/wirkstoffname), v2→v3 (`order_markers`).
+Migrationen: v1→v2 (Med-Namen), v3 (order_markers), v4–v5 (Material), v6 (storage_locations).
+
+### Material-Modi
+
+| Modus | MHD |
+|-------|-----|
+| `simple` | Optional (seit v0.59) |
+| `variant` | Je nach Preset; Maske ohne Pflicht-MHD |
+| `no_expiry` | Nein |
+
+### Varianten-Presets (`materialVariants.ts`)
+
+`tubus_mm`, `venflon`, `guedel_groesse`, `magill_cm`, `larynxmaske_auragain`, `igel_groesse`, `spritze_ml`, `spatel_macintosh`, `spatel_miller`, `maske_groesse`, `absaugkatheter_ch`
+
+Katalog-Referenz: `src/data/materialCatalog.draft.md`
+
+### Backup v3
+
+Enthält Medikamente, Material, Chargen/Lots, Nachfülllisten, Fotos, Bestellt-Marker, Lagerorte. Datei `.vialcheck`.
 
 ### Kernlogik
 
 | Bereich | Verhalten |
 |---------|-----------|
-| **Bestand** | Alphabetisch; Chargen pro MHD; rot/gelb/grün; Verbrauch mit Charge; Bearbeiten; Backup |
-| **Medikament hinzufügen** | Manuell oder Ampullen-Foto (Kamera/Galerie + OCR); Autocomplete aus Katalog + lokalem Bestand |
-| **Nachfüllen** | Eine scrollbare Liste in Reihenfolge: **Verbraucht** → **Abgelaufen** → **Bald ablaufend** (≤3 Mon.) → **Bestellt** (alle Typen zusammen) |
-| **Bestellt** | Markierung vor Lieferung; nach Lieferung „Aufgefüllt“ / „Ersetzt“ zum Einsortieren |
+| **Medikamente** | Chargen, MHD-Farben, OCR, Karten-Fotos, Einsortieren |
+| **Material** | Katalog-Autocomplete, Varianten-Dropdowns, Lots, Nachfüllen |
+| **Nachfüllen** | Verbraucht → Abgelaufen → Bald ablaufend → Bestellt (Med + Material) |
+| **MonthPicker** | Pflicht bei Med; optional bei Material mit `--` zum Leeren |
 
-Weitere Details:
+### Hosting
 
-- MHD-Farben: abgelaufen rot, ≤3 Monate gelb, sonst grün
-- Mengen-Schnellauswahl: **1-2-3-5** (`QUICK_QUANTITY_OPTIONS`)
-- Handels-/Wirkstoffname mit wählbarer Überschrift; mg/Ampulle = ml × mg/ml
-- **Medikamenten-Vorschläge:** eingebauter Katalog (25 Einträge) + lokaler Bestand; ab 2 Zeichen
-- Monatsübersicht am letzten Tag des Monats (Modal + optionale Notification beim App-Start)
-- Tab-Badge Nachfüllen: verbraucht + abgelaufen + bald ablaufend
+- **Produktion:** https://vialcheck.app (Vercel, Root `emergency-meds-pwa`)
+- **GitHub:** https://github.com/PfarrhofIb/VialCheck — Push `main` → Deploy
 
-### Backup
-
-- Export als **`.vialcheck`** (JSON-Inhalt, app-spezifische Endung)
-- Zwei Wege: **Auf Gerät speichern** (Download/Speicherort-Dialog) oder **Teilen…** (Drive, E-Mail, Dateien-App)
-- Import akzeptiert `.vialcheck` und ältere `.json`-Backups
-- Enthält: medications, batches, refill_list, photos, order_markers
-
-### Dev-Setup PWA (Windows, User afri8)
+### Dev-Setup PWA
 
 ```powershell
 cd C:\Users\afri8\Documents\emergency_meds\emergency-meds-pwa
-.\npm_run.bat run dev          # localhost:5173
+.\npm_run.bat run dev
 .\npm_run.bat run build
 ```
 
-**Lokal am Handy (Dev):** Aus Repo-Root `.\serve_pwa.bat` → Tailscale Serve  
-URL: `https://laptop-onifsvh7.tailfd525a.ts.net` (nur wenn PC läuft; Produktion siehe unten)
-
-### Hosting & Deployment (Stand: Juni 2026)
-
-| Was | Wert |
-|-----|------|
-| **GitHub** | https://github.com/PfarrhofIb/VialCheck (Public) |
-| **Produktion** | https://vialcheck.app |
-| **Vercel** | Root Directory `emergency-meds-pwa`, Build `npm run build` → `dist/` |
-| **Auto-Deploy** | Push auf `main` |
-
-**DNS (uniteddomains):** A `@` + A `*` → `216.198.79.1` (Vercel)
-
-**SPA-Routing:** `emergency-meds-pwa/vercel.json` — Rewrites für `/`, `/nachfullen`
-
-**Daten:** IndexedDB pro Gerät; nichts auf Server. Backup manuell.
-
-### Logo & App-Icon
-
-| Was | Pfad |
-|-----|------|
-| Master | `Bilder/VialCheck Logo groß.png` (1024×1024) |
-| Icons | `public/favicon.png`, `public/icons/icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, `apple-touch-icon.png` |
-| theme-color | `#1B3A5C` (Navy) |
-
-PNG-Dateien müssen in Git committed sein — Vercel deployt nur aus GitHub.
-
-### Coding-Konventionen (PWA)
-
-- Struktur: types → db/queries → hooks → pages/components
-- Zustand beibehalten; minimale Diffs; deutsche UI-Texte
-
 ### Noch offen (PWA)
 
-- Hintergrund-Push / Sync zwischen Geräten
+- Medikamenten-Katalog Ampullarium (nach Dosierungs-Bereinigung)
+- Hintergrund-Push / Sync
 - Tests
-- `@zxing/browser` in package.json (ungenutzt seit Scanner-Entfernung) — optional entfernen
 
 ---
 
 ## Flutter-App (Repo-Root) — Legacy
 
-Offline-First **Android-App** (Flutter/Dart). Nicht mehr aktiv entwickelt.
-
-```powershell
-cd C:\Users\afri8\Documents\emergency_meds
-.\flutter_run.bat run
-```
-
-Neue Features primär in der PWA umsetzen.
+Nicht mehr aktiv. Neue Features nur in der PWA.
