@@ -14,6 +14,7 @@ import MaterialVariantPicker from './MaterialVariantPicker'
 import { parseQuantityInput } from '../utils/quantityInput'
 import StorageLocationField from './StorageLocationField'
 import { persistStorageLocation } from '../utils/storageLocation'
+import { materialNeedsExpiry } from '../utils/materialVariants'
 
 interface EditMaterialModalProps {
   material: MaterialWithLots | null
@@ -44,7 +45,7 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
 
   if (!material) return null
 
-  const hasExpiry = material.mode === 'simple' || material.mode === 'variant'
+  const needsExpiry = materialNeedsExpiry(material)
   const isVariant = material.mode === 'variant'
 
   async function handleSave(e: React.FormEvent) {
@@ -200,7 +201,7 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
                     onChange={(v) => updateLotVariant(lot.id!, v)}
                   />
                 )}
-                {hasExpiry && (
+                {needsExpiry && (
                   <MonthPicker
                     value={lot.expiry_date ?? ''}
                     onChange={(v) => updateLotExpiry(lot.id!, v)}

@@ -5,21 +5,27 @@ import { useStore } from '../hooks/useStore'
 import BottomSheet from './BottomSheet'
 import MonthPicker from './MonthPicker'
 import MaterialVariantPicker from './MaterialVariantPicker'
-import { VARIANT_PRESET_HINTS } from '../utils/materialVariants'
+import MaterialNameField from './MaterialNameField'
+import {
+  ALL_VARIANT_PRESETS,
+  VARIANT_PRESET_HINTS,
+  VARIANT_PRESET_LABELS,
+  materialNeedsExpiry,
+} from '../utils/materialVariants'
 import { normalizeQuantityInput, parseQuantityInput, QUICK_QUANTITY_OPTIONS } from '../utils/quantityInput'
 import StorageLocationField from './StorageLocationField'
 import { persistStorageLocation } from '../utils/storageLocation'
+import type { MaterialSuggestion } from '../utils/materialSuggestions'
 
 interface AddMaterialSheetProps {
   open: boolean
   onClose: () => void
 }
 
-type AddMode = MaterialMode
-
 export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProps) {
   const refresh = useStore((s) => s.refresh)
-  const [mode, setMode] = useState<AddMode>('simple')
+  const materials = useStore((s) => s.materials)
+  const [mode, setMode] = useState<MaterialMode>('simple')
   const [variantPreset, setVariantPreset] = useState<VariantPreset>('tubus_mm')
   const [variantLabel, setVariantLabel] = useState('')
   const [name, setName] = useState('')
@@ -45,7 +51,10 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
     setVariantLabel('')
   }, [variantPreset, mode])
 
-  const needsExpiry = mode === 'simple' || mode === 'variant'
+  const needsExpiry = materialNeedsExpiry({
+    mode,
+    variant_preset: mode === 'variant' ? variantPreset : undefined,
+  })
   const needsVariant = mode === 'variant'
 
   const canSave =
@@ -53,6 +62,13 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
     (!needsExpiry || !!expiry) &&
     (!needsVariant || !!variantLabel) &&
     (parseQuantityInput(qtyInput) ?? 0) >= 1
+
+  function applySuggestion(s: MaterialSuggestion) {
+    setName(s.name)
+    setMode(s.mode)
+    if (s.variant_preset) setVariantPreset(s.variant_preset)
+    setVariantLabel('')
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -68,7 +84,7 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
           ...(location ? { storage_location: location } : {}),
         },
         {
-          expiry_date: mode === 'no_expiry' ? undefined : expiry,
+          expiry_date: needsExpiry ? expiry : undefined,
           variant_label: mode === 'variant' ? variantLabel : undefined,
           quantity: parseQuantityInput(qtyInput) ?? 1,
         },
@@ -79,15 +95,6 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
       setLoading(false)
     }
   }
-
-  const namePlaceholder =
-    mode === 'variant'
-      ? variantPreset === 'venflon'
-        ? 'z. B. Venflon'
-        : 'z. B. Tubus, Magill, Guedel'
-      : mode === 'no_expiry'
-        ? 'z. B. Pinzette'
-        : 'z. B. Sterilium'
 
   const footer = (
     <div className="flex gap-3">
@@ -119,58 +126,46 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
               checked={mode === 'simple'}
               onChange={() => setMode('simple')}
               title="Einfach (mit MHD)"
-              hint="z. B. Sterilium, Desinfektion"
+              hint="z. B. Sterilium, Infusionsbesteck"
             />
             <ModeOption
               checked={mode === 'variant'}
               onChange={() => setMode('variant')}
               title="Mit Größe / Variante"
-              hint="Tubus, Venflon, Magill, Guedel"
+              hint="Venflon, Tubus, Spritze, Larynxmaske …"
             />
             <ModeOption
               checked={mode === 'no_expiry'}
               onChange={() => setMode('no_expiry')}
               title="Ohne MHD"
-              hint="z. B. Pinzette, Schere"
+              hint="z. B. Schere, Ambubeutel"
             />
           </div>
         </div>
 
+        <MaterialNameField
+          name={name}
+          onNameChange={setName}
+          onSuggestionSelect={applySuggestion}
+          localMaterials={materials}
+        />
+
         {mode === 'variant' && (
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-gray-700">Varianten-Typ</span>
-            <div className="grid grid-cols-2 gap-2">
-              {(['tubus_mm', 'venflon'] as const).map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setVariantPreset(preset)}
-                  className={`p-3 rounded-xl border text-left transition-colors ${
-                    variantPreset === preset
-                      ? 'border-brand-navy bg-brand-navy-50'
-                      : 'border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  <p className="text-sm font-medium text-gray-900">
-                    {preset === 'tubus_mm' ? 'Größe mm' : 'Venflon'}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">{VARIANT_PRESET_HINTS[preset]}</p>
-                </button>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Varianten-Typ</label>
+            <select
+              value={variantPreset}
+              onChange={(e) => setVariantPreset(e.target.value as VariantPreset)}
+              className="border border-gray-300 rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy"
+            >
+              {ALL_VARIANT_PRESETS.map((preset) => (
+                <option key={preset} value={preset}>
+                  {VARIANT_PRESET_LABELS[preset]} — {VARIANT_PRESET_HINTS[preset]}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
         )}
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
-            placeholder={namePlaceholder}
-            required
-          />
-        </div>
 
         {mode === 'variant' && (
           <MaterialVariantPicker

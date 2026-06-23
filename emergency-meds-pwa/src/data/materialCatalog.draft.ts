@@ -1,0 +1,122 @@
+/**
+ * ENTWURF – Material-Katalog (nur zur Review, nicht eingebunden)
+ * Lesen: materialCatalog.draft.md
+ */
+import type { MaterialMode, VariantPreset } from '../types/material'
+
+export type PlannedVariantPreset =
+  | VariantPreset
+  | 'larynxmaske_auragain'
+  | 'spritze_ml'
+  | 'spatel_macintosh'
+  | 'spatel_miller'
+  | 'maske_groesse'
+
+export interface MaterialCatalogEntry {
+  name: string
+  mode: MaterialMode
+  variant_preset?: PlannedVariantPreset
+}
+
+export const PLANNED_VARIANT_OPTIONS: Record<
+  Exclude<PlannedVariantPreset, VariantPreset>,
+  string[]
+> = {
+  larynxmaske_auragain: ['1', '1,5', '2', '2,5', '3', '4', '5'],
+  spritze_ml: ['1 ml', '2 ml', '5 ml', '10 ml', '20 ml'],
+  spatel_macintosh: ['2', '3', '4'],
+  spatel_miller: ['0', '1'],
+  maske_groesse: ['groß', 'klein', 'mittel'],
+}
+
+// ─── 1. Variante / Dropdown (9) ────────────────────────────────────────────
+
+const VARIANT: MaterialCatalogEntry[] = [
+  { name: 'Venflon', mode: 'variant', variant_preset: 'venflon' },
+  { name: 'ET-Tubus', mode: 'variant', variant_preset: 'tubus_mm' },
+  { name: 'Guedel', mode: 'variant', variant_preset: 'tubus_mm' },
+  { name: 'Magill', mode: 'variant', variant_preset: 'tubus_mm' },
+  { name: 'Larynxmaske AuraGain', mode: 'variant', variant_preset: 'larynxmaske_auragain' },
+  { name: 'Spritze', mode: 'variant', variant_preset: 'spritze_ml' },
+  { name: 'Spatel Macintosh', mode: 'variant', variant_preset: 'spatel_macintosh' },
+  { name: 'Spatel Miller', mode: 'variant', variant_preset: 'spatel_miller' },
+  { name: 'Maske', mode: 'variant', variant_preset: 'maske_groesse' },
+]
+
+// ─── 2. Mit MHD (24) ───────────────────────────────────────────────────────
+
+const WITH_EXPIRY: MaterialCatalogEntry[] = [
+  { name: 'Elomel 500ml', mode: 'simple' },
+  { name: 'Gelofusin 500ml', mode: 'simple' },
+  { name: 'NaCl 100ml', mode: 'simple' },
+  { name: 'Infusionsbesteck', mode: 'simple' },
+  { name: 'Mini-Spike', mode: 'simple' },
+  { name: 'Rückschlagventil', mode: 'simple' },
+  { name: 'Venflonpflaster groß', mode: 'simple' },
+  { name: 'Venflonpflaster braun/quer', mode: 'simple' },
+  { name: 'Rote Stöpsel', mode: 'simple' },
+  { name: 'Aufziekanülen', mode: 'simple' },
+  { name: '3-Weg-Hahn kurz', mode: 'simple' },
+  { name: '3-Weg-Hahn lang', mode: 'simple' },
+  { name: 'Stepty', mode: 'simple' },
+  { name: 'Spritze i.m. Erw. (30-45mm)', mode: 'simple' },
+  { name: 'Spritze i.m. Kind (15-25mm)', mode: 'simple' },
+  { name: 'NaCl 10ml Omniflush', mode: 'simple' },
+  { name: 'Kompressen groß', mode: 'simple' },
+  { name: 'Kompressen klein', mode: 'simple' },
+  { name: 'Isareli-Bandage', mode: 'simple' },
+  { name: 'Opsite-Folie', mode: 'simple' },
+  { name: 'Tubusfixierung Pflaster', mode: 'simple' },
+  { name: 'CO2-Detektor', mode: 'simple' },
+  { name: 'Schleimabsauger', mode: 'simple' },
+  { name: 'PEEP-Ventil', mode: 'simple' },
+]
+
+// ─── 3. Ohne MHD (37) ──────────────────────────────────────────────────────
+
+const NO_EXPIRY: MaterialCatalogEntry[] = [
+  { name: 'Ambubeutel', mode: 'no_expiry' },
+  { name: 'Ambubeutel Kinder', mode: 'no_expiry' },
+  { name: 'Wendel', mode: 'no_expiry' },
+  { name: 'Gleitgel', mode: 'no_expiry' },
+  { name: 'Griff', mode: 'no_expiry' },
+  { name: 'Tubusfixierung Schlauch', mode: 'no_expiry' },
+  { name: 'Blockerspritze', mode: 'no_expiry' },
+  { name: 'Mandrin klein', mode: 'no_expiry' },
+  { name: 'Mandrin mittel', mode: 'no_expiry' },
+  { name: 'O2-Flasche', mode: 'no_expiry' },
+  { name: 'O2-Schlauch', mode: 'no_expiry' },
+  { name: 'Stethoskop', mode: 'no_expiry' },
+  { name: 'RR Manschette', mode: 'no_expiry' },
+  { name: 'Pulsoxymeter', mode: 'no_expiry' },
+  { name: 'Blutzuckermessgerät', mode: 'no_expiry' },
+  { name: 'Diagnostikleuchte', mode: 'no_expiry' },
+  { name: 'Splint', mode: 'no_expiry' },
+  { name: 'Peha Haft', mode: 'no_expiry' },
+  { name: 'Peha-Haft klein', mode: 'no_expiry' },
+  { name: 'Mullbinde', mode: 'no_expiry' },
+  { name: 'Z-Fold Gauze', mode: 'no_expiry' },
+  { name: 'Tourniquet', mode: 'no_expiry' },
+  { name: 'Aludecke', mode: 'no_expiry' },
+  { name: 'Dreiecktuch', mode: 'no_expiry' },
+  { name: 'Rettungsschere', mode: 'no_expiry' },
+  { name: 'Verbandsschere', mode: 'no_expiry' },
+  { name: 'Sterile Schere', mode: 'no_expiry' },
+  { name: 'Einmalskalpell', mode: 'no_expiry' },
+  { name: 'Klemme', mode: 'no_expiry' },
+  { name: 'Klemme unsteril', mode: 'no_expiry' },
+  { name: 'Stapler', mode: 'no_expiry' },
+  { name: 'Sterile Handschuhe Gr. 7,5', mode: 'no_expiry' },
+  { name: 'Stauschlauch', mode: 'no_expiry' },
+  { name: 'Unsterile Tupfer', mode: 'no_expiry' },
+  { name: 'Alkotupfer', mode: 'no_expiry' },
+  { name: 'Kugelschreiber', mode: 'no_expiry' },
+  { name: 'Edding dünn', mode: 'no_expiry' },
+  { name: 'Edding dick', mode: 'no_expiry' },
+]
+
+export const MATERIAL_CATALOG_DRAFT: MaterialCatalogEntry[] = [
+  ...VARIANT,
+  ...WITH_EXPIRY,
+  ...NO_EXPIRY,
+]

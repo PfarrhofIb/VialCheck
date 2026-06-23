@@ -16,6 +16,7 @@ import Modal from './Modal'
 import MonthPicker from './MonthPicker'
 import MaterialVariantPicker from './MaterialVariantPicker'
 import { normalizeQuantityInput, parseQuantityInput } from '../utils/quantityInput'
+import { materialNeedsExpiry } from '../utils/materialVariants'
 import { useStore } from '../hooks/useStore'
 
 const REFILL_ACTION_BTN =
@@ -258,7 +259,7 @@ function MaterialRefillDialog({
   const [variantLabel, setVariantLabel] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const needsExpiry = mat?.mode === 'simple' || mat?.mode === 'variant'
+  const needsExpiry = mat ? materialNeedsExpiry(mat) : false
   const isVariant = mat?.mode === 'variant'
 
   async function handleConfirm() {

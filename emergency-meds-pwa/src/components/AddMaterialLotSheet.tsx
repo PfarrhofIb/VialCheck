@@ -6,6 +6,7 @@ import BottomSheet from './BottomSheet'
 import MonthPicker from './MonthPicker'
 import MaterialVariantPicker from './MaterialVariantPicker'
 import { normalizeQuantityInput, parseQuantityInput, QUICK_QUANTITY_OPTIONS } from '../utils/quantityInput'
+import { materialNeedsExpiry } from '../utils/materialVariants'
 
 interface AddMaterialLotSheetProps {
   material: MaterialWithLots | null
@@ -29,11 +30,11 @@ export default function AddMaterialLotSheet({ material, onClose }: AddMaterialLo
 
   if (!material) return null
 
-  const isNoExpiry = material.mode === 'no_expiry'
+  const needsExpiry = materialNeedsExpiry(material)
   const isVariant = material.mode === 'variant'
 
   const canSave =
-    (isNoExpiry || !!expiry) &&
+    (!needsExpiry || !!expiry) &&
     (!isVariant || !!variantLabel) &&
     (parseQuantityInput(qtyInput) ?? 0) >= 1
 
@@ -43,16 +44,12 @@ export default function AddMaterialLotSheet({ material, onClose }: AddMaterialLo
     setLoading(true)
     try {
       const qty = parseQuantityInput(qtyInput) ?? 1
-      if (isNoExpiry) {
-        await addOrUpdateMaterialLot(material!.id!, undefined, undefined, qty)
-      } else {
-        await addOrUpdateMaterialLot(
-          material!.id!,
-          expiry,
-          isVariant ? variantLabel : undefined,
-          qty,
-        )
-      }
+      await addOrUpdateMaterialLot(
+        material!.id!,
+        needsExpiry ? expiry : undefined,
+        isVariant ? variantLabel : undefined,
+        qty,
+      )
       await refresh()
       onClose()
     } finally {
@@ -80,7 +77,7 @@ export default function AddMaterialLotSheet({ material, onClose }: AddMaterialLo
     <BottomSheet
       open={!!material}
       onClose={onClose}
-      title={isNoExpiry ? 'Menge erhöhen' : 'Bestand hinzufügen'}
+      title={needsExpiry ? 'Bestand hinzufügen' : 'Menge erhöhen'}
       footer={footer}
     >
       <p className="text-sm text-gray-500 mb-4">{material.name}</p>
@@ -93,12 +90,12 @@ export default function AddMaterialLotSheet({ material, onClose }: AddMaterialLo
             required
           />
         )}
-        {!isNoExpiry && (
+        {needsExpiry && (
           <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat" required />
         )}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
-            {isNoExpiry ? 'Hinzufügen' : 'Menge'}
+            {!needsExpiry && !isVariant ? 'Hinzufügen' : 'Menge'}
           </label>
           <div className="flex items-center gap-2">
             {QUICK_QUANTITY_OPTIONS.map((n) => (
