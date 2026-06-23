@@ -22,13 +22,13 @@ export default function MaterialsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-3 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-3 pr-14 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-bold text-gray-900">Material</h1>
           <button
             type="button"
             onClick={() => refresh()}
-            className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
+            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 mr-10"
             aria-label="Aktualisieren"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

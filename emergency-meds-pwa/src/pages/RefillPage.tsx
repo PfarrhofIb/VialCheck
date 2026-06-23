@@ -97,7 +97,7 @@ export default function RefillPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-100 px-4 py-4 pr-14 sticky top-0 z-10">
         <h1 className="text-xl font-bold text-gray-900">Nachfüllen</h1>
       </div>
 
