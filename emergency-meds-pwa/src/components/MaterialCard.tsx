@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import type { MaterialWithLots, MaterialLot } from '../types/material'
+import { getPhoto } from '../db/queries'
 import {
   formatLotLabel,
   getMaterialSubtitle,
@@ -33,16 +35,19 @@ export default function MaterialCard({ material, onConsume, onEdit, onAddLot }: 
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2 flex-wrap">
-            <p className="font-semibold text-gray-900">{material.name}</p>
-            {hasExpired && (
-              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium shrink-0">
-                Abgelaufen
-              </span>
-            )}
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          {material.photo_blob_id && <MaterialPhotoThumb photoBlobId={material.photo_blob_id} />}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2 flex-wrap">
+              <p className="font-semibold text-gray-900">{material.name}</p>
+              {hasExpired && (
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium shrink-0">
+                  Abgelaufen
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">{getMaterialSubtitle(material)}</p>
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">{getMaterialSubtitle(material)}</p>
         </div>
         <div className="text-right shrink-0">
           <span className="text-2xl font-bold text-gray-900">{material.totalQuantity}</span>
@@ -99,4 +104,25 @@ function LotRow({ lot, showExpiry }: { lot: MaterialLot; showExpiry: boolean }) 
       <span className="font-medium text-gray-700">{lot.quantity}×</span>
     </div>
   )
+}
+
+function MaterialPhotoThumb({ photoBlobId }: { photoBlobId: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    let objectUrl: string | undefined
+    getPhoto(photoBlobId).then((blob) => {
+      if (blob) {
+        objectUrl = URL.createObjectURL(blob)
+        setUrl(objectUrl)
+      }
+    })
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [photoBlobId])
+
+  if (!url) return null
+
+  return <img src={url} alt="" className="w-12 h-12 object-cover rounded-lg shrink-0" />
 }

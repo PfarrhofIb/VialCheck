@@ -8,6 +8,7 @@ export interface Material {
   mode: MaterialMode
   variant_preset?: VariantPreset
   notes?: string
+  photo_blob_id?: string
 }
 
 export interface MaterialLot {

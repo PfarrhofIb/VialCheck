@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { MaterialWithLots } from '../types/material'
 import {
   updateMaterial,
@@ -6,6 +6,7 @@ import {
   updateMaterialLot,
   deleteMaterialLot,
 } from '../db/materialQueries'
+import { savePhoto, getPhoto, deletePhoto } from '../db/queries'
 import { useStore } from '../hooks/useStore'
 import Modal from './Modal'
 import MonthPicker from './MonthPicker'
@@ -20,11 +21,21 @@ interface EditMaterialModalProps {
 export default function EditMaterialModal({ material, onClose }: EditMaterialModalProps) {
   const refresh = useStore((s) => s.refresh)
   const [name, setName] = useState('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [photoLoading, setPhotoLoading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const galleryRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!material) return
     setName(material.name)
+    setPhotoUrl(null)
+    if (material.photo_blob_id) {
+      getPhoto(material.photo_blob_id).then((blob) => {
+        if (blob) setPhotoUrl(URL.createObjectURL(blob))
+      })
+    }
   }, [material])
 
   if (!material) return null
@@ -43,6 +54,26 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handlePhotoUpload(file: File) {
+    setPhotoLoading(true)
+    try {
+      const photoId = await savePhoto(file)
+      await updateMaterial(material!.id!, { photo_blob_id: photoId })
+      setPhotoUrl(URL.createObjectURL(file))
+      await refresh()
+    } finally {
+      setPhotoLoading(false)
+    }
+  }
+
+  async function handleDeletePhoto() {
+    if (!material?.photo_blob_id) return
+    await deletePhoto(material.photo_blob_id)
+    await updateMaterial(material.id!, { photo_blob_id: undefined })
+    setPhotoUrl(null)
+    await refresh()
   }
 
   async function handleDelete() {
@@ -85,6 +116,64 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
             onChange={(e) => setName(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-navy"
             required
+          />
+        </div>
+
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-2">Foto</p>
+          {photoUrl ? (
+            <div className="relative w-24 h-24">
+              <img src={photoUrl} alt={material.name} className="w-24 h-24 object-cover rounded-xl" />
+              <button
+                type="button"
+                onClick={handleDeletePhoto}
+                className="absolute -top-1 -right-1 bg-brand-navy text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={photoLoading}
+                className="flex-1 flex items-center justify-center gap-2 text-sm text-brand-navy border border-brand-navy/30 rounded-xl px-3 py-2 hover:bg-brand-navy-50"
+              >
+                {photoLoading ? 'Wird gespeichert…' : 'Foto aufnehmen'}
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryRef.current?.click()}
+                disabled={photoLoading}
+                className="flex-1 flex items-center justify-center gap-2 text-sm text-gray-600 border border-gray-300 rounded-xl px-3 py-2 hover:bg-gray-50"
+              >
+                Galerie
+              </button>
+            </div>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) handlePhotoUpload(f)
+              e.target.value = ''
+            }}
+          />
+          <input
+            ref={galleryRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) handlePhotoUpload(f)
+              e.target.value = ''
+            }}
           />
         </div>
 
