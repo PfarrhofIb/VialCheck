@@ -34,7 +34,7 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
       }
       setMessage({
         type: 'ok',
-        text: `Backup erstellt (${backup.medications.length} Medikamente).`,
+        text: `Backup erstellt (${backup.medications.length} Medikamente, ${backup.materials?.length ?? 0} Material).`,
       })
     } catch (err) {
       const text =
@@ -59,7 +59,8 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
       const ok = confirm(
         `Backup vom ${date} importieren?\n\n` +
           `${backup.medications.length} Medikamente, ` +
-          `${backup.medication_batches.length} Chargen\n\n` +
+          `${backup.medication_batches.length} Chargen, ` +
+          `${backup.materials?.length ?? 0} Material\n\n` +
           `Alle aktuellen Daten auf diesem Gerät werden ersetzt.`,
       )
       if (!ok) return
@@ -91,7 +92,7 @@ export default function BackupSheet({ open, onClose }: BackupSheetProps) {
   return (
     <BottomSheet open={open} onClose={onClose} title="Datensicherung" footer={footer}>
       <p className="text-sm text-gray-500 mb-4">
-        Sichere alle Medikamente, Chargen, Nachfüllliste und Fotos als VialCheck-Backup
+        Sichere Medikamente, Material, Chargen, Nachfülllisten und Fotos als VialCheck-Backup
         ({BACKUP_FILE_EXTENSION}). Ältere Backups mit Endung .json können weiter importiert werden.
       </p>
 

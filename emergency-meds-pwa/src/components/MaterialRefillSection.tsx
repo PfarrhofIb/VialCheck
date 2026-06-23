@@ -264,7 +264,6 @@ function MaterialRefillDialog({
 
   async function handleConfirm() {
     if (addToStock) {
-      if (needsExpiry && !expiry) return
       if (isVariant && !variantLabel) return
     }
     setLoading(true)
@@ -272,7 +271,7 @@ function MaterialRefillDialog({
       if (addToStock && mat) {
         await addOrUpdateMaterialLot(
           mat.id!,
-          needsExpiry ? expiry : undefined,
+          needsExpiry && expiry ? expiry : undefined,
           isVariant ? variantLabel : undefined,
           parseQuantityInput(qtyInput) ?? 1,
         )
@@ -309,7 +308,7 @@ function MaterialRefillDialog({
               />
             )}
             {needsExpiry && (
-              <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat" required />
+              <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat (optional)" />
             )}
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">Menge</label>
@@ -333,7 +332,6 @@ function MaterialRefillDialog({
             onClick={handleConfirm}
             disabled={
               loading ||
-              (addToStock && needsExpiry && !expiry) ||
               (addToStock && isVariant && !variantLabel)
             }
             className="flex-1 py-3 bg-brand-navy text-white font-semibold rounded-xl disabled:bg-gray-200"

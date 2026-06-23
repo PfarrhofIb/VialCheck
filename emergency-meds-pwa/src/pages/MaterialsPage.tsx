@@ -6,12 +6,14 @@ import AddMaterialSheet from '../components/AddMaterialSheet'
 import AddMaterialLotSheet from '../components/AddMaterialLotSheet'
 import ConsumeMaterialSheet from '../components/ConsumeMaterialSheet'
 import EditMaterialModal from '../components/EditMaterialModal'
+import BackupSheet from '../components/BackupSheet'
 import { materialMatchesSearch } from '../utils/materialDisplay'
 
 export default function MaterialsPage() {
   const { materials, loading, refresh } = useStore()
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [showBackup, setShowBackup] = useState(false)
   const [consumeMat, setConsumeMat] = useState<MaterialWithLots | null>(null)
   const [addLotMat, setAddLotMat] = useState<MaterialWithLots | null>(null)
   const [editMat, setEditMat] = useState<MaterialWithLots | null>(null)
@@ -25,17 +27,30 @@ export default function MaterialsPage() {
       <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-3 pr-14 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-bold text-gray-900">Material</h1>
-          <button
-            type="button"
-            onClick={() => refresh()}
-            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 mr-10"
-            aria-label="Aktualisieren"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1 mr-10">
+            <button
+              type="button"
+              onClick={() => setShowBackup(true)}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
+              aria-label="Datensicherung"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => refresh()}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
+              aria-label="Aktualisieren"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
         </div>
         <input
           type="search"
@@ -83,6 +98,7 @@ export default function MaterialsPage() {
       <AddMaterialLotSheet material={addLotMat} onClose={() => setAddLotMat(null)} />
       <ConsumeMaterialSheet material={consumeMat} onClose={() => setConsumeMat(null)} />
       <EditMaterialModal material={editMat} onClose={() => setEditMat(null)} />
+      <BackupSheet open={showBackup} onClose={() => setShowBackup(false)} />
     </div>
   )
 }

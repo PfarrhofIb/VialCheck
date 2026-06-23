@@ -59,12 +59,19 @@ export default function MonthPicker({ value, onChange, label, required, includes
           required={required}
           className={selectClass}
         >
-          <option value="">Monat</option>
+          {required ? (
+            <option value="">Monat</option>
+          ) : (
+            <option value="" disabled hidden>
+              Monat
+            </option>
+          )}
           {MONTHS.map((m) => (
             <option key={m.value} value={m.value}>
               {m.label}
             </option>
           ))}
+          {!required && <option value="">--</option>}
         </select>
 
         <select
@@ -73,12 +80,19 @@ export default function MonthPicker({ value, onChange, label, required, includes
           required={required}
           className={selectClass}
         >
-          <option value="">Jahr</option>
+          {required ? (
+            <option value="">Jahr</option>
+          ) : (
+            <option value="" disabled hidden>
+              Jahr
+            </option>
+          )}
           {years.map((y) => (
             <option key={y} value={String(y)}>
               {y}
             </option>
           ))}
+          {!required && <option value="">--</option>}
         </select>
       </div>
     </div>

@@ -59,7 +59,6 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
 
   const canSave =
     name.trim().length > 0 &&
-    (!needsExpiry || !!expiry) &&
     (!needsVariant || !!variantLabel) &&
     (parseQuantityInput(qtyInput) ?? 0) >= 1
 
@@ -84,7 +83,7 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
           ...(location ? { storage_location: location } : {}),
         },
         {
-          expiry_date: needsExpiry ? expiry : undefined,
+          expiry_date: needsExpiry && expiry ? expiry : undefined,
           variant_label: mode === 'variant' ? variantLabel : undefined,
           quantity: parseQuantityInput(qtyInput) ?? 1,
         },
@@ -179,7 +178,7 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
         <StorageLocationField value={storageLocation} onChange={setStorageLocation} />
 
         {needsExpiry && (
-          <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat" required />
+          <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat (optional)" />
         )}
 
         <QuantityField qtyInput={qtyInput} onQtyChange={setQtyInput} />

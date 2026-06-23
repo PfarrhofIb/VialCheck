@@ -34,7 +34,6 @@ export default function AddMaterialLotSheet({ material, onClose }: AddMaterialLo
   const isVariant = material.mode === 'variant'
 
   const canSave =
-    (!needsExpiry || !!expiry) &&
     (!isVariant || !!variantLabel) &&
     (parseQuantityInput(qtyInput) ?? 0) >= 1
 
@@ -46,7 +45,7 @@ export default function AddMaterialLotSheet({ material, onClose }: AddMaterialLo
       const qty = parseQuantityInput(qtyInput) ?? 1
       await addOrUpdateMaterialLot(
         material!.id!,
-        needsExpiry ? expiry : undefined,
+        needsExpiry && expiry ? expiry : undefined,
         isVariant ? variantLabel : undefined,
         qty,
       )
@@ -91,7 +90,7 @@ export default function AddMaterialLotSheet({ material, onClose }: AddMaterialLo
           />
         )}
         {needsExpiry && (
-          <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat" required />
+          <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat (optional)" />
         )}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
