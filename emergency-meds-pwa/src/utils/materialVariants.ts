@@ -16,14 +16,31 @@ export const VENFLON_VARIANTS: string[] = [
   'Violett 26G',
 ]
 
-/** Guedel: ISO-Größennummer (nicht Tubus-mm). */
-export const GUEDEL_SIZES = ['000', '00', '0', '1', '2', '3', '4', '5']
+/** Guedel, Larynxmaske, i-gel, Beatmungsmaske — gemeinsame Nummerierung. */
+export const GROESSE_NUMMER_SIZES = [
+  '000',
+  '00',
+  '0',
+  '1',
+  '1,5',
+  '2',
+  '2,5',
+  '3',
+  '4',
+  '5',
+  '6',
+]
+
+/** @deprecated Alias — gleiche Werte wie {@link GROESSE_NUMMER_SIZES} */
+export const GUEDEL_SIZES = GROESSE_NUMMER_SIZES
 
 export const MAGILL_CM_SIZES = ['15 cm', '20 cm', '25 cm']
 
-export const LARYNXMASKE_AURAGAIN_SIZES = ['1', '1,5', '2', '2,5', '3', '4', '5', '6']
+/** @deprecated Alias */
+export const LARYNXMASKE_AURAGAIN_SIZES = GROESSE_NUMMER_SIZES
 
-export const IGEL_SIZES = ['1', '1,5', '2', '2,5', '3', '4', '5']
+/** @deprecated Alias */
+export const IGEL_SIZES = GROESSE_NUMMER_SIZES
 
 export const SPRITZE_ML_SIZES = ['1 ml', '2 ml', '5 ml', '10 ml', '20 ml', '50 ml']
 
@@ -31,8 +48,8 @@ export const SPATEL_MACINTOSH_SIZES = ['0', '1', '2', '3', '4']
 
 export const SPATEL_MILLER_SIZES = ['00', '0', '1', '2', '3', '4']
 
-/** Beatmungsmasken nach üblicher Nummerierung (BVM). */
-export const MASKE_NUMMER_SIZES = ['0', '1', '2', '3', '4', '5']
+/** @deprecated Alias */
+export const MASKE_NUMMER_SIZES = GROESSE_NUMMER_SIZES
 
 /** Absaugkatheter: Charrière + Farbe am Trichter (ISO-üblich). */
 export const ABSAUGKATHETER_CH_SIZES = [
@@ -44,7 +61,16 @@ export const ABSAUGKATHETER_CH_SIZES = [
   '16 CH orange',
 ]
 
+const LEGACY_GROESSE_PRESETS: VariantPreset[] = [
+  'guedel_groesse',
+  'larynxmaske_auragain',
+  'igel_groesse',
+  'maske_groesse',
+]
+
+/** Alle Presets (inkl. Legacy für bestehende DB-Einträge). */
 export const ALL_VARIANT_PRESETS: VariantPreset[] = [
+  'groesse_nummer',
   'tubus_mm',
   'venflon',
   'guedel_groesse',
@@ -58,26 +84,41 @@ export const ALL_VARIANT_PRESETS: VariantPreset[] = [
   'absaugkatheter_ch',
 ]
 
+/** Kurzliste für „Material hinzufügen“ (ohne Legacy-Duplikate). */
+export const ADD_VARIANT_PRESETS: VariantPreset[] = [
+  'groesse_nummer',
+  'tubus_mm',
+  'venflon',
+  'magill_cm',
+  'spritze_ml',
+  'spatel_macintosh',
+  'spatel_miller',
+  'absaugkatheter_ch',
+]
+
+export function normalizePresetForAdd(preset: VariantPreset): VariantPreset {
+  if (LEGACY_GROESSE_PRESETS.includes(preset)) return 'groesse_nummer'
+  return preset
+}
+
 export function variantsForPreset(preset: VariantPreset): string[] {
   switch (preset) {
     case 'venflon':
       return VENFLON_VARIANTS
+    case 'groesse_nummer':
     case 'guedel_groesse':
-      return GUEDEL_SIZES
+    case 'larynxmaske_auragain':
+    case 'igel_groesse':
+    case 'maske_groesse':
+      return GROESSE_NUMMER_SIZES
     case 'magill_cm':
       return MAGILL_CM_SIZES
-    case 'larynxmaske_auragain':
-      return LARYNXMASKE_AURAGAIN_SIZES
-    case 'igel_groesse':
-      return IGEL_SIZES
     case 'spritze_ml':
       return SPRITZE_ML_SIZES
     case 'spatel_macintosh':
       return SPATEL_MACINTOSH_SIZES
     case 'spatel_miller':
       return SPATEL_MILLER_SIZES
-    case 'maske_groesse':
-      return MASKE_NUMMER_SIZES
     case 'absaugkatheter_ch':
       return ABSAUGKATHETER_CH_SIZES
     default:
@@ -85,7 +126,7 @@ export function variantsForPreset(preset: VariantPreset): string[] {
   }
 }
 
-/** Beatmungsmasken: Variante ohne Pflicht-MHD. */
+/** Beatmungsmasken: Variante ohne Pflicht-MHD (Legacy-Preset). */
 export function variantRequiresExpiry(preset: VariantPreset): boolean {
   return preset !== 'maske_groesse'
 }
@@ -105,6 +146,7 @@ export function materialNeedsExpiry(material: {
 export const VARIANT_PRESET_LABELS: Record<VariantPreset, string> = {
   tubus_mm: 'Größe (mm)',
   venflon: 'Venflon',
+  groesse_nummer: 'Größe',
   guedel_groesse: 'Größe',
   magill_cm: 'Länge',
   larynxmaske_auragain: 'Größe',
@@ -119,19 +161,20 @@ export const VARIANT_PRESET_LABELS: Record<VariantPreset, string> = {
 export const VARIANT_PRESET_HINTS: Record<VariantPreset, string> = {
   tubus_mm: 'Endotrachealtubus',
   venflon: 'Farbe und Größe',
-  guedel_groesse: 'Guedel-Tubus 000 – 5',
+  groesse_nummer: 'Guedel, Larynxmaske, i-gel, Maske',
+  guedel_groesse: 'Guedel-Tubus',
   magill_cm: 'Magill-Zange',
   larynxmaske_auragain: 'Ambu AuraGain',
   igel_groesse: 'Intersurgical i-gel',
   spritze_ml: '1 – 50 ml',
   spatel_macintosh: 'Spatel Macintosh 0 – 4',
   spatel_miller: 'Spatel Miller 00 – 4',
-  maske_groesse: 'Beatmungsmaske 0 – 5',
+  maske_groesse: 'Beatmungsmaske',
   absaugkatheter_ch: 'CH und Farbe',
 }
 
 export const MATERIAL_MODE_LABELS: Record<string, string> = {
-  simple: 'Einfach (mit MHD)',
+  simple: 'Einfach',
   variant: 'Mit Größe / Variante',
-  no_expiry: 'Ohne MHD',
+  no_expiry: 'Einfach',
 }

@@ -8,15 +8,17 @@ import MonthPicker from './MonthPicker'
 import MaterialVariantPicker from './MaterialVariantPicker'
 import MaterialNameField from './MaterialNameField'
 import {
-  ALL_VARIANT_PRESETS,
+  ADD_VARIANT_PRESETS,
   VARIANT_PRESET_HINTS,
   VARIANT_PRESET_LABELS,
-  materialNeedsExpiry,
+  normalizePresetForAdd,
 } from '../utils/materialVariants'
 import { normalizeQuantityInput, parseQuantityInput, QUICK_QUANTITY_OPTIONS } from '../utils/quantityInput'
 import StorageLocationField from './StorageLocationField'
 import { persistStorageLocation } from '../utils/storageLocation'
 import type { MaterialSuggestion } from '../utils/materialSuggestions'
+
+type MaterialKind = 'einfach' | 'variant'
 
 interface AddMaterialSheetProps {
   open: boolean
@@ -26,8 +28,9 @@ interface AddMaterialSheetProps {
 export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProps) {
   const refresh = useStore((s) => s.refresh)
   const materials = useStore((s) => s.materials)
-  const [mode, setMode] = useState<MaterialMode>('simple')
-  const [variantPreset, setVariantPreset] = useState<VariantPreset>('tubus_mm')
+  const [kind, setKind] = useState<MaterialKind>('einfach')
+  const [einfachMode, setEinfachMode] = useState<'simple' | 'no_expiry'>('simple')
+  const [variantPreset, setVariantPreset] = useState<VariantPreset>('groesse_nummer')
   const [variantLabel, setVariantLabel] = useState('')
   const [name, setName] = useState('')
   const [storageLocation, setStorageLocation] = useState('')
@@ -41,8 +44,9 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
 
   useEffect(() => {
     if (!open) return
-    setMode('simple')
-    setVariantPreset('tubus_mm')
+    setKind('einfach')
+    setEinfachMode('simple')
+    setVariantPreset('groesse_nummer')
     setVariantLabel('')
     setName('')
     setStorageLocation('')
@@ -54,25 +58,26 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
   }, [open])
 
   useEffect(() => {
-    if (mode !== 'variant') return
+    if (kind !== 'variant') return
     setVariantLabel('')
-  }, [variantPreset, mode])
+  }, [variantPreset, kind])
 
-  const needsExpiry = materialNeedsExpiry({
-    mode,
-    variant_preset: mode === 'variant' ? variantPreset : undefined,
-  })
-  const needsVariant = mode === 'variant'
+  const isVariant = kind === 'variant'
 
   const canSave =
     name.trim().length > 0 &&
-    (!needsVariant || !!variantLabel) &&
+    (!isVariant || !!variantLabel) &&
     (parseQuantityInput(qtyInput) ?? 0) >= 1
 
   function applySuggestion(s: MaterialSuggestion) {
     setName(s.name)
-    setMode(s.mode)
-    if (s.variant_preset) setVariantPreset(s.variant_preset)
+    if (s.mode === 'variant') {
+      setKind('variant')
+      if (s.variant_preset) setVariantPreset(normalizePresetForAdd(s.variant_preset))
+    } else {
+      setKind('einfach')
+      setEinfachMode(s.mode === 'no_expiry' ? 'no_expiry' : 'simple')
+    }
     setVariantLabel('')
   }
 
@@ -99,17 +104,18 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
     try {
       const location = await persistStorageLocation(storageLocation)
       const photo_blob_id = photoFile ? await savePhoto(photoFile) : undefined
+      const mode: MaterialMode = isVariant ? 'variant' : einfachMode
       await addMaterialWithLot(
         {
           name: name.trim(),
           mode,
-          variant_preset: mode === 'variant' ? variantPreset : undefined,
+          variant_preset: isVariant ? variantPreset : undefined,
           ...(location ? { storage_location: location } : {}),
           ...(photo_blob_id ? { photo_blob_id } : {}),
         },
         {
-          expiry_date: needsExpiry && expiry ? expiry : undefined,
-          variant_label: mode === 'variant' ? variantLabel : undefined,
+          expiry_date: expiry || undefined,
+          variant_label: isVariant ? variantLabel : undefined,
           quantity: parseQuantityInput(qtyInput) ?? 1,
         },
       )
@@ -147,22 +153,19 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
           <span className="text-sm font-medium text-gray-700">Art</span>
           <div className="grid grid-cols-1 gap-2">
             <ModeOption
-              checked={mode === 'simple'}
-              onChange={() => setMode('simple')}
-              title="Einfach (mit MHD)"
-              hint="z. B. Sterilium, Infusionsbesteck"
+              checked={kind === 'einfach'}
+              onChange={() => {
+                setKind('einfach')
+                setEinfachMode('simple')
+              }}
+              title="Einfach"
+              hint="z. B. Sterilium, Schere, Infusionsbesteck — MHD optional"
             />
             <ModeOption
-              checked={mode === 'variant'}
-              onChange={() => setMode('variant')}
+              checked={kind === 'variant'}
+              onChange={() => setKind('variant')}
               title="Mit Größe / Variante"
-              hint="Venflon, Tubus, Spritze, Larynxmaske …"
-            />
-            <ModeOption
-              checked={mode === 'no_expiry'}
-              onChange={() => setMode('no_expiry')}
-              title="Ohne MHD"
-              hint="z. B. Schere, Ambubeutel"
+              hint="Venflon, Tubus, Guedel, Larynxmaske …"
             />
           </div>
         </div>
@@ -174,37 +177,34 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
           localMaterials={materials}
         />
 
-        {mode === 'variant' && (
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Varianten-Typ</label>
-            <select
-              value={variantPreset}
-              onChange={(e) => setVariantPreset(e.target.value as VariantPreset)}
-              className="border border-gray-300 rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy"
-            >
-              {ALL_VARIANT_PRESETS.map((preset) => (
-                <option key={preset} value={preset}>
-                  {VARIANT_PRESET_LABELS[preset]} — {VARIANT_PRESET_HINTS[preset]}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {mode === 'variant' && (
-          <MaterialVariantPicker
-            preset={variantPreset}
-            value={variantLabel}
-            onChange={setVariantLabel}
-            required
-          />
+        {isVariant && (
+          <>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">Varianten-Typ</label>
+              <select
+                value={variantPreset}
+                onChange={(e) => setVariantPreset(e.target.value as VariantPreset)}
+                className="border border-gray-300 rounded-lg px-3 py-2.5 text-base bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy"
+              >
+                {ADD_VARIANT_PRESETS.map((preset) => (
+                  <option key={preset} value={preset}>
+                    {VARIANT_PRESET_LABELS[preset]} — {VARIANT_PRESET_HINTS[preset]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <MaterialVariantPicker
+              preset={variantPreset}
+              value={variantLabel}
+              onChange={setVariantLabel}
+              required
+            />
+          </>
         )}
 
         <StorageLocationField value={storageLocation} onChange={setStorageLocation} />
 
-        {needsExpiry && (
-          <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat (optional)" />
-        )}
+        <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat (optional)" />
 
         <QuantityField qtyInput={qtyInput} onQtyChange={setQtyInput} />
 

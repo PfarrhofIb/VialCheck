@@ -3,6 +3,7 @@ export type MaterialMode = 'simple' | 'variant' | 'no_expiry'
 export type VariantPreset =
   | 'tubus_mm'
   | 'venflon'
+  | 'groesse_nummer'
   | 'guedel_groesse'
   | 'magill_cm'
   | 'larynxmaske_auragain'

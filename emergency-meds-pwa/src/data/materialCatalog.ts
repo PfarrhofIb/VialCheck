@@ -9,14 +9,14 @@ export interface MaterialCatalogEntry {
 const VARIANT: MaterialCatalogEntry[] = [
   { name: 'Venflon', mode: 'variant', variant_preset: 'venflon' },
   { name: 'ET-Tubus', mode: 'variant', variant_preset: 'tubus_mm' },
-  { name: 'Guedel', mode: 'variant', variant_preset: 'guedel_groesse' },
+  { name: 'Guedel', mode: 'variant', variant_preset: 'groesse_nummer' },
   { name: 'Magill', mode: 'variant', variant_preset: 'magill_cm' },
-  { name: 'Larynxmaske AuraGain', mode: 'variant', variant_preset: 'larynxmaske_auragain' },
-  { name: 'I-Gel', mode: 'variant', variant_preset: 'igel_groesse' },
+  { name: 'Larynxmaske AuraGain', mode: 'variant', variant_preset: 'groesse_nummer' },
+  { name: 'I-Gel', mode: 'variant', variant_preset: 'groesse_nummer' },
   { name: 'Spritze', mode: 'variant', variant_preset: 'spritze_ml' },
   { name: 'Spatel Macintosh', mode: 'variant', variant_preset: 'spatel_macintosh' },
   { name: 'Spatel Miller', mode: 'variant', variant_preset: 'spatel_miller' },
-  { name: 'Maske', mode: 'variant', variant_preset: 'maske_groesse' },
+  { name: 'Maske', mode: 'variant', variant_preset: 'groesse_nummer' },
   { name: 'Absaugkatheter', mode: 'variant', variant_preset: 'absaugkatheter_ch' },
 ]
 
