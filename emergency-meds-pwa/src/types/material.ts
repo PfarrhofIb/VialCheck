@@ -3,11 +3,15 @@ export type MaterialMode = 'simple' | 'variant' | 'no_expiry'
 export type VariantPreset =
   | 'tubus_mm'
   | 'venflon'
+  | 'guedel_groesse'
+  | 'magill_cm'
   | 'larynxmaske_auragain'
+  | 'igel_groesse'
   | 'spritze_ml'
   | 'spatel_macintosh'
   | 'spatel_miller'
   | 'maske_groesse'
+  | 'absaugkatheter_ch'
 
 export interface Material {
   id?: number

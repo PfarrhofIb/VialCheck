@@ -9,17 +9,19 @@ export interface MaterialCatalogEntry {
 const VARIANT: MaterialCatalogEntry[] = [
   { name: 'Venflon', mode: 'variant', variant_preset: 'venflon' },
   { name: 'ET-Tubus', mode: 'variant', variant_preset: 'tubus_mm' },
-  { name: 'Guedel', mode: 'variant', variant_preset: 'tubus_mm' },
-  { name: 'Magill', mode: 'variant', variant_preset: 'tubus_mm' },
+  { name: 'Guedel', mode: 'variant', variant_preset: 'guedel_groesse' },
+  { name: 'Magill', mode: 'variant', variant_preset: 'magill_cm' },
   { name: 'Larynxmaske AuraGain', mode: 'variant', variant_preset: 'larynxmaske_auragain' },
+  { name: 'I-Gel', mode: 'variant', variant_preset: 'igel_groesse' },
   { name: 'Spritze', mode: 'variant', variant_preset: 'spritze_ml' },
   { name: 'Spatel Macintosh', mode: 'variant', variant_preset: 'spatel_macintosh' },
   { name: 'Spatel Miller', mode: 'variant', variant_preset: 'spatel_miller' },
   { name: 'Maske', mode: 'variant', variant_preset: 'maske_groesse' },
+  { name: 'Absaugkatheter', mode: 'variant', variant_preset: 'absaugkatheter_ch' },
 ]
 
 const WITH_EXPIRY: MaterialCatalogEntry[] = [
-  { name: 'Elomel 500ml', mode: 'simple' },
+  { name: 'Elo-Mel 500ml', mode: 'simple' },
   { name: 'Gelofusin 500ml', mode: 'simple' },
   { name: 'NaCl 100ml', mode: 'simple' },
   { name: 'Infusionsbesteck', mode: 'simple' },
@@ -37,11 +39,10 @@ const WITH_EXPIRY: MaterialCatalogEntry[] = [
   { name: 'NaCl 10ml Omniflush', mode: 'simple' },
   { name: 'Kompressen groß', mode: 'simple' },
   { name: 'Kompressen klein', mode: 'simple' },
-  { name: 'Isareli-Bandage', mode: 'simple' },
+  { name: 'Israeli-Druckverband', mode: 'simple' },
   { name: 'Opsite-Folie', mode: 'simple' },
   { name: 'Tubusfixierung Pflaster', mode: 'simple' },
   { name: 'CO2-Detektor', mode: 'simple' },
-  { name: 'Schleimabsauger', mode: 'simple' },
   { name: 'PEEP-Ventil', mode: 'simple' },
 ]
 

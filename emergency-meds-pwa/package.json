@@ -1,7 +1,7 @@
 {
   "name": "emergency-meds-pwa",
   "private": true,
-  "version": "0.59",
+  "version": "0.60",
   "type": "module",
   "scripts": {
     "dev": "vite",
