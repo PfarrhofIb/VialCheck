@@ -7,6 +7,8 @@ import MedicationNameFields from './MedicationNameFields'
 import { runOcr } from '../utils/ocr'
 import { getPrimaryName, hasAnyName, type DisplayNameField } from '../utils/medicationDisplay'
 import type { MedicationSuggestion } from '../utils/medicationSuggestions'
+import StorageLocationField from './StorageLocationField'
+import { persistStorageLocation } from '../utils/storageLocation'
 
 interface EditMedicationModalProps {
   med: MedicationWithBatches | null
@@ -21,6 +23,7 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
   const [displayName, setDisplayName] = useState<DisplayNameField>('handelsname')
   const [mlPerAmpule, setMlPerAmpule] = useState('')
   const [mgPerMl, setMgPerMl] = useState('')
+  const [storageLocation, setStorageLocation] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
@@ -34,6 +37,7 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
     setDisplayName(med.display_name ?? 'handelsname')
     setMlPerAmpule(med.ml_per_ampule?.toString() ?? '')
     setMgPerMl(med.mg_per_ml?.toString() ?? '')
+    setStorageLocation(med.storage_location ?? '')
     setPhotoUrl(null)
     if (med.photo_blob_id) {
       getPhoto(med.photo_blob_id).then((blob) => {
@@ -56,10 +60,12 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
     if (!canSave) return
     setLoading(true)
     try {
+      const location = await persistStorageLocation(storageLocation)
       await updateMedication(med!.id!, {
         handelsname: handelsname.trim(),
         wirkstoffname: wirkstoffname.trim(),
         display_name: displayName,
+        storage_location: location,
         ml_per_ampule: mlPerAmpule ? parseFloat(mlPerAmpule) : undefined,
         mg_per_ml: mgPerMl ? parseFloat(mgPerMl) : undefined,
       })
@@ -73,6 +79,7 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
   async function handlePhotoUpload(file: File) {
     setOcrLoading(true)
     try {
+      if (med?.photo_blob_id) await deletePhoto(med.photo_blob_id)
       const photoId = await savePhoto(file)
       await updateMedication(med!.id!, { photo_blob_id: photoId })
       setPhotoUrl(URL.createObjectURL(file))
@@ -114,6 +121,8 @@ export default function EditMedicationModal({ med, onClose }: EditMedicationModa
           localMedications={medications}
           onSuggestionSelect={applySuggestion}
         />
+
+        <StorageLocationField value={storageLocation} onChange={setStorageLocation} />
 
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">

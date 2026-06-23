@@ -5,8 +5,9 @@ import type {
   MaterialRefillItem,
   MaterialOrderMarker,
 } from './material'
+import type { StorageLocation } from './storageLocation'
 
-export const BACKUP_VERSION = 2
+export const BACKUP_VERSION = 3
 
 export interface BackupPhoto {
   id: string
@@ -26,4 +27,5 @@ export interface BackupFile {
   material_lots?: MaterialLot[]
   material_refill_list?: MaterialRefillItem[]
   material_order_markers?: MaterialOrderMarker[]
+  storage_locations?: StorageLocation[]
 }

@@ -58,12 +58,22 @@ export async function updateMedication(id: number, changes: Partial<Medication>)
 }
 
 export async function deleteMedication(id: number): Promise<void> {
-  await db.transaction('rw', db.medications, db.medication_batches, db.refill_list, db.order_markers, async () => {
-    await db.medication_batches.where('medication_id').equals(id).delete()
-    await db.refill_list.where('medication_id').equals(id).delete()
-    await db.order_markers.where('medication_id').equals(id).delete()
-    await db.medications.delete(id)
-  })
+  const med = await db.medications.get(id)
+  await db.transaction(
+    'rw',
+    db.medications,
+    db.medication_batches,
+    db.refill_list,
+    db.order_markers,
+    db.photos,
+    async () => {
+      await db.medication_batches.where('medication_id').equals(id).delete()
+      await db.refill_list.where('medication_id').equals(id).delete()
+      await db.order_markers.where('medication_id').equals(id).delete()
+      if (med?.photo_blob_id) await db.photos.delete(med.photo_blob_id)
+      await db.medications.delete(id)
+    },
+  )
 }
 
 // ──────────────── Batches ────────────────

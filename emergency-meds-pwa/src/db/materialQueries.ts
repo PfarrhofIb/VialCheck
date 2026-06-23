@@ -39,16 +39,19 @@ export async function updateMaterial(id: number, changes: Partial<Material>): Pr
 }
 
 export async function deleteMaterial(id: number): Promise<void> {
+  const mat = await db.materials.get(id)
   await db.transaction(
     'rw',
     db.materials,
     db.material_lots,
     db.material_refill_list,
     db.material_order_markers,
+    db.photos,
     async () => {
       await db.material_lots.where('material_id').equals(id).delete()
       await db.material_refill_list.where('material_id').equals(id).delete()
       await db.material_order_markers.where('material_id').equals(id).delete()
+      if (mat?.photo_blob_id) await db.photos.delete(mat.photo_blob_id)
       await db.materials.delete(id)
     },
   )

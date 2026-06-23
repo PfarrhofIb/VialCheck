@@ -19,11 +19,15 @@ export function getSecondaryName(med: NameFields): string | null {
   return s
 }
 
-export function medicationMatchesSearch(med: NameFields, query: string): boolean {
+export function medicationMatchesSearch(
+  med: NameFields & { storage_location?: string },
+  query: string,
+): boolean {
   const q = query.toLowerCase()
   return (
     (med.handelsname?.toLowerCase().includes(q) ?? false) ||
-    (med.wirkstoffname?.toLowerCase().includes(q) ?? false)
+    (med.wirkstoffname?.toLowerCase().includes(q) ?? false) ||
+    (med.storage_location?.toLowerCase().includes(q) ?? false)
   )
 }
 

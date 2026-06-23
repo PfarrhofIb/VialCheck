@@ -7,6 +7,7 @@ export interface Medication {
   wirkstoffname: string
   display_name: DisplayNameField
   photo_blob_id?: string
+  storage_location?: string
   ml_per_ampule?: number
   mg_per_ml?: number
 }

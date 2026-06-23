@@ -6,6 +6,7 @@ export function materialMatchesSearch(mat: MaterialWithLots, query: string): boo
   const q = query.trim().toLowerCase()
   if (!q) return true
   if (mat.name.toLowerCase().includes(q)) return true
+  if (mat.storage_location?.toLowerCase().includes(q)) return true
   return mat.lots.some((l) => l.variant_label?.toLowerCase().includes(q))
 }
 

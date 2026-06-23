@@ -7,6 +7,8 @@ import MonthPicker from './MonthPicker'
 import MaterialVariantPicker from './MaterialVariantPicker'
 import { VARIANT_PRESET_HINTS } from '../utils/materialVariants'
 import { normalizeQuantityInput, parseQuantityInput, QUICK_QUANTITY_OPTIONS } from '../utils/quantityInput'
+import StorageLocationField from './StorageLocationField'
+import { persistStorageLocation } from '../utils/storageLocation'
 
 interface AddMaterialSheetProps {
   open: boolean
@@ -21,6 +23,7 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
   const [variantPreset, setVariantPreset] = useState<VariantPreset>('tubus_mm')
   const [variantLabel, setVariantLabel] = useState('')
   const [name, setName] = useState('')
+  const [storageLocation, setStorageLocation] = useState('')
   const [expiry, setExpiry] = useState('')
   const [qtyInput, setQtyInput] = useState('1')
   const [loading, setLoading] = useState(false)
@@ -31,6 +34,7 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
     setVariantPreset('tubus_mm')
     setVariantLabel('')
     setName('')
+    setStorageLocation('')
     setExpiry('')
     setQtyInput('1')
     setLoading(false)
@@ -55,11 +59,13 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
     if (!canSave) return
     setLoading(true)
     try {
+      const location = await persistStorageLocation(storageLocation)
       await addMaterialWithLot(
         {
           name: name.trim(),
           mode,
           variant_preset: mode === 'variant' ? variantPreset : undefined,
+          ...(location ? { storage_location: location } : {}),
         },
         {
           expiry_date: mode === 'no_expiry' ? undefined : expiry,
@@ -174,6 +180,8 @@ export default function AddMaterialSheet({ open, onClose }: AddMaterialSheetProp
             required
           />
         )}
+
+        <StorageLocationField value={storageLocation} onChange={setStorageLocation} />
 
         {needsExpiry && (
           <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat" required />

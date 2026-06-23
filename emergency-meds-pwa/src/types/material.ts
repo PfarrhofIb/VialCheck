@@ -9,6 +9,7 @@ export interface Material {
   variant_preset?: VariantPreset
   notes?: string
   photo_blob_id?: string
+  storage_location?: string
 }
 
 export interface MaterialLot {

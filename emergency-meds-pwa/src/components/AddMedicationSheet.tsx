@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { addMedication, findExistingMedication, addOrUpdateBatch } from '../db/queries'
+import { addMedication, findExistingMedication, addOrUpdateBatch, updateMedication } from '../db/queries'
 import { useStore } from '../hooks/useStore'
 import BottomSheet from './BottomSheet'
 import MonthPicker from './MonthPicker'
@@ -9,6 +9,8 @@ import { runOcr } from '../utils/ocr'
 import { hasAnyName, type DisplayNameField } from '../utils/medicationDisplay'
 import type { MedicationSuggestion } from '../utils/medicationSuggestions'
 import { normalizeQuantityInput, parseQuantityInput, QUICK_QUANTITY_OPTIONS } from '../utils/quantityInput'
+import StorageLocationField from './StorageLocationField'
+import { persistStorageLocation } from '../utils/storageLocation'
 
 interface AddMedicationSheetProps {
   open: boolean
@@ -37,6 +39,7 @@ export default function AddMedicationSheet({
   const [qtyInput, setQtyInput] = useState('1')
   const [mlPerAmpule, setMlPerAmpule] = useState('')
   const [mgPerMl, setMgPerMl] = useState('')
+  const [storageLocation, setStorageLocation] = useState('')
   const [loading, setLoading] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [snack, setSnack] = useState('')
@@ -52,6 +55,7 @@ export default function AddMedicationSheet({
     setQtyInput('1')
     setMlPerAmpule('')
     setMgPerMl('')
+    setStorageLocation('')
     setSnack('')
     setLoading(false)
     setOcrLoading(false)
@@ -86,16 +90,19 @@ export default function AddMedicationSheet({
     if (!canSave) return
     setLoading(true)
     try {
+      const location = await persistStorageLocation(storageLocation)
       const existing = await findExistingMedication(handelsname, wirkstoffname)
       let medId: number
       if (existing) {
         medId = existing.id!
+        await updateMedication(medId, { storage_location: location })
       } else {
         medId = await addMedication({
           barcode: initialBarcode || barcode,
           handelsname: handelsname.trim(),
           wirkstoffname: wirkstoffname.trim(),
           display_name: displayName,
+          ...(location ? { storage_location: location } : {}),
           ml_per_ampule: mlPerAmpule ? parseFloat(mlPerAmpule) : undefined,
           mg_per_ml: mgPerMl ? parseFloat(mgPerMl) : undefined,
         })
@@ -208,6 +215,8 @@ export default function AddMedicationSheet({
         />
 
         <MonthPicker value={expiry} onChange={setExpiry} label="Ablaufmonat" required />
+
+        <StorageLocationField value={storageLocation} onChange={setStorageLocation} />
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Menge <span className="text-brand-navy">*</span></label>

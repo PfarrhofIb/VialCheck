@@ -12,6 +12,8 @@ import Modal from './Modal'
 import MonthPicker from './MonthPicker'
 import MaterialVariantPicker from './MaterialVariantPicker'
 import { parseQuantityInput } from '../utils/quantityInput'
+import StorageLocationField from './StorageLocationField'
+import { persistStorageLocation } from '../utils/storageLocation'
 
 interface EditMaterialModalProps {
   material: MaterialWithLots | null
@@ -21,6 +23,7 @@ interface EditMaterialModalProps {
 export default function EditMaterialModal({ material, onClose }: EditMaterialModalProps) {
   const refresh = useStore((s) => s.refresh)
   const [name, setName] = useState('')
+  const [storageLocation, setStorageLocation] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [photoLoading, setPhotoLoading] = useState(false)
@@ -30,6 +33,7 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
   useEffect(() => {
     if (!material) return
     setName(material.name)
+    setStorageLocation(material.storage_location ?? '')
     setPhotoUrl(null)
     if (material.photo_blob_id) {
       getPhoto(material.photo_blob_id).then((blob) => {
@@ -48,7 +52,11 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
     if (!name.trim()) return
     setLoading(true)
     try {
-      await updateMaterial(material!.id!, { name: name.trim() })
+      const location = await persistStorageLocation(storageLocation)
+      await updateMaterial(material!.id!, {
+        name: name.trim(),
+        storage_location: location,
+      })
       await refresh()
       onClose()
     } finally {
@@ -59,6 +67,7 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
   async function handlePhotoUpload(file: File) {
     setPhotoLoading(true)
     try {
+      if (material?.photo_blob_id) await deletePhoto(material.photo_blob_id)
       const photoId = await savePhoto(file)
       await updateMaterial(material!.id!, { photo_blob_id: photoId })
       setPhotoUrl(URL.createObjectURL(file))
@@ -118,6 +127,8 @@ export default function EditMaterialModal({ material, onClose }: EditMaterialMod
             required
           />
         </div>
+
+        <StorageLocationField value={storageLocation} onChange={setStorageLocation} />
 
         <div>
           <p className="text-sm font-medium text-gray-700 mb-2">Foto</p>

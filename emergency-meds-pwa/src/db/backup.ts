@@ -1,7 +1,9 @@
 import { db } from './schema'
 import type { Medication, MedicationBatch, RefillItem, Photo, OrderMarker } from '../types'
 import type { Material, MaterialLot, MaterialRefillItem, MaterialOrderMarker } from '../types/material'
+import type { StorageLocation } from '../types/storageLocation'
 import { normalizeMedicationFields } from '../utils/medicationDisplay'
+import { seedStorageLocationsFromNames } from './storageLocationQueries'
 import { BACKUP_VERSION, type BackupFile, type BackupPhoto } from '../types/backup'
 
 async function blobToBase64(blob: Blob): Promise<{ data: string; mimeType: string }> {
@@ -35,6 +37,7 @@ export async function exportBackup(): Promise<BackupFile> {
     material_lots,
     material_refill_list,
     material_order_markers,
+    storage_locations,
   ] = await Promise.all([
     db.medications.toArray(),
     db.medication_batches.toArray(),
@@ -45,6 +48,7 @@ export async function exportBackup(): Promise<BackupFile> {
     db.material_lots.toArray(),
     db.material_refill_list.toArray(),
     db.material_order_markers.toArray(),
+    db.storage_locations.toArray(),
   ])
 
   const backupPhotos: BackupPhoto[] = await Promise.all(
@@ -66,6 +70,7 @@ export async function exportBackup(): Promise<BackupFile> {
     material_lots,
     material_refill_list,
     material_order_markers,
+    storage_locations,
   }
 }
 
@@ -73,7 +78,7 @@ function validateBackup(data: unknown): data is BackupFile {
   if (!data || typeof data !== 'object') return false
   const b = data as BackupFile
   return (
-    (b.version === 1 || b.version === 2) &&
+    (b.version === 1 || b.version === 2 || b.version === 3) &&
     typeof b.exportedAt === 'string' &&
     Array.isArray(b.medications) &&
     Array.isArray(b.medication_batches) &&
@@ -101,6 +106,7 @@ export async function importBackup(file: BackupFile): Promise<void> {
   const materialLots = file.material_lots ?? []
   const materialRefillList = file.material_refill_list ?? []
   const materialOrderMarkers = file.material_order_markers ?? []
+  const storageLocations = file.storage_locations ?? []
 
   await db.transaction(
     'rw',
@@ -152,6 +158,19 @@ export async function importBackup(file: BackupFile): Promise<void> {
       }
     },
   )
+
+  await db.transaction('rw', db.storage_locations, async () => {
+    await db.storage_locations.clear()
+    if (storageLocations.length) {
+      await db.storage_locations.bulkPut(storageLocations as StorageLocation[])
+    } else {
+      const names = [
+        ...medications.map((m) => m.storage_location),
+        ...materials.map((m) => m.storage_location),
+      ].filter((n): n is string => !!n?.trim())
+      await seedStorageLocationsFromNames(names)
+    }
+  })
 }
 
 export function parseBackupFile(text: string): BackupFile {

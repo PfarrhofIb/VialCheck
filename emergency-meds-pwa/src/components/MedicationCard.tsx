@@ -1,7 +1,9 @@
 import type { MedicationWithBatches, MedicationBatch } from '../types'
 import { formatYearMonth, expiryColorClass, isExpired, isExpiringSoon } from '../utils/expiry'
 import MedicationNameDisplay from './MedicationNameDisplay'
+import PhotoThumb from './PhotoThumb'
 import { formatConcentrationLine } from '../utils/medicationDisplay'
+
 interface MedicationCardProps {
   med: MedicationWithBatches
   onConsume: (med: MedicationWithBatches) => void
@@ -17,18 +19,24 @@ export default function MedicationCard({ med, onConsume, onEdit, onAddBatch }: M
   return (
     <div className={`bg-white rounded-2xl shadow-sm border ${hasExpired ? 'border-red-300' : hasSoon ? 'border-yellow-300' : 'border-gray-100'} p-4`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2 flex-wrap flex-1 min-w-0">
-            <MedicationNameDisplay med={med} />
-            {hasExpired && (
-              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium shrink-0">
-                Abgelaufen
-              </span>
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          {med.photo_blob_id && <PhotoThumb photoBlobId={med.photo_blob_id} />}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2 flex-wrap flex-1 min-w-0">
+              <MedicationNameDisplay med={med} />
+              {hasExpired && (
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium shrink-0">
+                  Abgelaufen
+                </span>
+              )}
+            </div>
+            {concentrationLine && (
+              <p className="text-xs text-gray-500 mt-0.5">{concentrationLine}</p>
+            )}
+            {med.storage_location && (
+              <p className="text-xs text-gray-500 mt-0.5">Einsortiert: {med.storage_location}</p>
             )}
           </div>
-          {concentrationLine && (
-            <p className="text-xs text-gray-500 mt-0.5">{concentrationLine}</p>
-          )}
         </div>
         <div className="text-right shrink-0">
           <span className="text-2xl font-bold text-gray-900">{med.totalQuantity}</span>
@@ -36,7 +44,6 @@ export default function MedicationCard({ med, onConsume, onEdit, onAddBatch }: M
         </div>
       </div>
 
-      {/* Chargen */}
       {med.batches.length > 0 && (
         <div className="mt-3 space-y-1">
           {[...med.batches]
@@ -47,7 +54,6 @@ export default function MedicationCard({ med, onConsume, onEdit, onAddBatch }: M
         </div>
       )}
 
-      {/* Aktionen */}
       <div className="mt-3 flex gap-2 flex-wrap">
         <button
           onClick={() => onConsume(med)}
